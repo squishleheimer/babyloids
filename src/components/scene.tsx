@@ -1,19 +1,24 @@
 import React, { useRef } from 'react';
+
+import { StageFace } from '../core/stage-face';
+import Vector from '../core/agency/math/vector';
+
 import { ActionManager } from '@babylonjs/core/Actions/actionManager';
 import { ExecuteCodeAction } from '@babylonjs/core/Actions';
 import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight';
 import { FreeCamera } from '@babylonjs/core/Cameras/freeCamera';
-import { Vector3 } from '@babylonjs/core/Maths/math';
+import { Color3, Vector3 } from '@babylonjs/core/Maths/math';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 import BabylonScene from 'babylonjs-hook';
 import './scene.css';
 
-let box;
 let babylonLink;
+
+let stageFace: StageFace;
 
 const onSceneReady = scene => {
   // This creates and positions a free camera (non-mesh)
-  var camera = new FreeCamera("camera1", new Vector3(0, 5, -10), scene);
+  var camera = new FreeCamera("camera1", new Vector3(0, 5, -50), scene);
 
   // This targets the camera to scene origin
   camera.setTarget(Vector3.Zero());
@@ -29,37 +34,53 @@ const onSceneReady = scene => {
   // Default intensity is 1. Let's dim the light a small amount
   light.intensity = 0.7;
 
-  // Our built-in 'box' shape.
-  box = MeshBuilder.CreateBox("box", {size: 2}, scene);
+  var faceColors = [];
+  faceColors[0] = Color3.Blue();
+  faceColors[1] = Color3.Red();
+  faceColors[2] = Color3.Green();
+  faceColors[3] = Color3.White();
+  faceColors[4] = Color3.Yellow();
+  faceColors[5] = Color3.Black();
 
-  // Move the box upward 1/2 its height
-  box.position.y = 1;
+  const boxOptions = {
+    faceColors: faceColors,
+    size: 2.0
+  };
+
+  stageFace = new StageFace(
+    scene,
+    200,
+    200);
+    
+  const m = MeshBuilder.CreateBox(
+    "box", 
+    boxOptions, 
+    scene);
+
+  m.isVisible = false;
+
+  // Our built-in 'ground' shape.
+  const ground = MeshBuilder.CreateGround("ground", {width: 200, height: 200}, scene);
 
   // Register click event on box mesh
-  box.actionManager = new ActionManager(scene);
-  box.actionManager.registerAction(
+  ground.actionManager = new ActionManager(scene);
+  ground.actionManager.registerAction(
     new ExecuteCodeAction(
         ActionManager.OnPickTrigger,
         () => {
-          babylonLink.current.click()
+          // babylonLink.current.click()
+          stageFace.addAgent(Vector.ZERO);
         }
     )
   );
-
-  // Our built-in 'ground' shape.
-  MeshBuilder.CreateGround("ground", {width: 6, height: 6}, scene);
 }
 
 /**
  * Will run on every frame render.  We are spinning the box on y-axis.
  */
 const onRender = scene => {
-  if (box !== undefined) {
-    var deltaTimeInMillis = scene.getEngine().getDeltaTime();
-
-    const rpm = 10;
-    box.rotation.y += ((rpm / 60) * Math.PI * 2 * (deltaTimeInMillis / 1000));
-  }
+  var deltaTimeInMilliseconds = scene.getEngine().getDeltaTime();
+  stageFace.tick(deltaTimeInMilliseconds * 0.001);
 }
 
 export default () => {

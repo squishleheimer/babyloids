@@ -1,9 +1,9 @@
 module.exports = {
   pathPrefix: "/gatsby-babylonjs-starter",
   siteMetadata: {
-    title: `Gatsby Babylon Starter`,
-    description: `Kick off your next, great Gatsby-Babylon project with this starter.`,
-    author: `Andrija Perusic, https://andrijaperusic.com`,
+    title: `Babyloids`,
+    description: `Gatsby, Babylon, Boids.`,
+    author: `Joshua King`,
   },
   plugins: [
     `gatsby-plugin-react-helmet`,
