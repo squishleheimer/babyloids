@@ -19,7 +19,7 @@ let stageFace: StageFace;
 
 const onSceneReady = scene => {
   // This creates and positions a free camera (non-mesh)
-  var camera = new FreeCamera("camera1", new Vector3(0, 5, -50), scene);
+  var camera = new FreeCamera("camera1", new Vector3(0, 50, -100), scene);
 
   // This targets the camera to scene origin
   camera.setTarget(Vector3.Zero());
@@ -35,19 +35,6 @@ const onSceneReady = scene => {
   // Default intensity is 1. Let's dim the light a small amount
   light.intensity = 0.7;
 
-  var faceColors = [];
-  faceColors[0] = Color3.Blue();
-  faceColors[1] = Color3.Red();
-  faceColors[2] = Color3.Green();
-  faceColors[3] = Color3.White();
-  faceColors[4] = Color3.Yellow();
-  faceColors[5] = Color3.Black();
-
-  const boxOptions = {
-    faceColors: faceColors,
-    size: 2.0
-  };
-
   stageFace = new StageFace(
     scene,
     200,
@@ -55,13 +42,6 @@ const onSceneReady = scene => {
 
   const arrow = DiagnosticFactory.createArrowDiagnostic(1.0);
   arrow.isVisible = false;
-    
-  // const m = MeshBuilder.CreateBox(
-  //   "box", 
-  //   boxOptions, 
-  //   scene);
-
-  // m.isVisible = false;
 
   // Our built-in 'ground' shape.
   const ground = MeshBuilder.CreateGround("ground", {width: 200, height: 200}, scene);
@@ -70,19 +50,32 @@ const onSceneReady = scene => {
   ground.actionManager = new ActionManager(scene);
   ground.actionManager.registerAction(
     new ExecuteCodeAction(
-        ActionManager.OnPickTrigger,
+        ActionManager.OnPickDownTrigger,
         () => {
-          // babylonLink.current.click()
-          stageFace.addAgent(Vector.ZERO);
+          addAgent = true;
+        }
+    )
+  );
+  ground.actionManager.registerAction(
+    new ExecuteCodeAction(
+        ActionManager.OnPickUpTrigger,
+        () => {
+          addAgent = false;
         }
     )
   );
 }
 
-
+let addAgent: boolean = false;
 const onRender = scene => {
   const deltaTimeInMilliseconds = scene.getEngine().getDeltaTime();
   stageFace.tick(deltaTimeInMilliseconds * 0.001);
+
+  if (addAgent) {
+    stageFace.addAgent(
+      Vector.randInRect(
+        stageFace.face.rect));
+  }
 }
 
 export default () => {

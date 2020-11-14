@@ -12,9 +12,9 @@ export class AgentState implements IState<Agent> {
 
 export default abstract class Agent extends Entity {
 
-  maxSpeed = 50.0;
-  maxForce = 25000.0;
-  mass = 100.0;
+  maxSpeed = 250.0;
+  maxForce = 2500.0;
+  mass = 10.0;
 
   face: any;
 
