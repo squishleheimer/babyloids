@@ -1,4 +1,4 @@
-import { Scene, Mesh, TransformNode, Color3, InstancedMesh, AbstractMesh } from '@babylonjs/core';
+import { Scene, Mesh, TransformNode, Color3, InstancedMesh, AbstractMesh, LinesMesh } from '@babylonjs/core';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 
 import Face from './agency/face';
@@ -81,19 +81,14 @@ export class StageFace {
       .forEach(a => a.fsm.transitionTo(new DozingOff()));
   }
 
-  createSprite(_: Agent, radius: number): Mesh {
-    const d = 2.0 * radius;
-    const sprite = MeshBuilder.CreateBox("box", {size: d}, this.scene);
-    return sprite;
-  }
-
   init(
     w: number,
     h: number): void {
 
     this.face = new Face(
       new Vector(w, h),
-      this.MAX_AGENTS);
+      this.MAX_AGENTS,
+      false);
 
     const cellRadius = this.face.csp.rect;
 
@@ -135,7 +130,7 @@ export class StageFace {
 
       //const m = MeshBuilder.CreateSphere("sphere", sphereOptions, this.scene);
 
-      const m: Mesh = this.scene.getMeshByID("box") as Mesh;
+      const m: LinesMesh = this.scene.getMeshByID("arrow") as LinesMesh;
       if (m) {
         a.g = m.createInstance("boid_" + this.face.facets.length)
         a.updateEvent.on(_ => {

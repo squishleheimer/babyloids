@@ -11,6 +11,7 @@ import { Color3, Vector3 } from '@babylonjs/core/Maths/math';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 import BabylonScene from 'babylonjs-hook';
 import './scene.css';
+import DiagnosticFactory from '../core/diagnostic-factory';
 
 let babylonLink;
 
@@ -51,13 +52,16 @@ const onSceneReady = scene => {
     scene,
     200,
     200);
-    
-  const m = MeshBuilder.CreateBox(
-    "box", 
-    boxOptions, 
-    scene);
 
-  m.isVisible = false;
+  const arrow = DiagnosticFactory.createArrowDiagnostic(1.0);
+  arrow.isVisible = false;
+    
+  // const m = MeshBuilder.CreateBox(
+  //   "box", 
+  //   boxOptions, 
+  //   scene);
+
+  // m.isVisible = false;
 
   // Our built-in 'ground' shape.
   const ground = MeshBuilder.CreateGround("ground", {width: 200, height: 200}, scene);
@@ -75,11 +79,9 @@ const onSceneReady = scene => {
   );
 }
 
-/**
- * Will run on every frame render.  We are spinning the box on y-axis.
- */
+
 const onRender = scene => {
-  var deltaTimeInMilliseconds = scene.getEngine().getDeltaTime();
+  const deltaTimeInMilliseconds = scene.getEngine().getDeltaTime();
   stageFace.tick(deltaTimeInMilliseconds * 0.001);
 }
 

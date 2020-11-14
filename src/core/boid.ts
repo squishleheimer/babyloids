@@ -13,7 +13,7 @@ export default class Boid extends Agent {
     radius: number,
     face: Face,
     p: Vector,
-    private rotationOffset = 0) { //Math.PI * -0.5) {
+    private rotationOffset = 0.0) {
     super(radius, face, p);
     this.resetEvent.on(_ => {
       if (this.g) {
@@ -25,7 +25,7 @@ export default class Boid extends Agent {
   public updateGraphics(): void {
     if (this.g) {
       if (this.sprotate === true) {
-        this.g.rotation.y = this.heading.angle + this.rotationOffset;
+        this.g.rotation.y = -this.heading.angle + this.rotationOffset;
       }
       this.g.position.x = this.position.x;
       this.g.position.z = this.position.y;
