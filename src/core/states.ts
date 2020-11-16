@@ -9,13 +9,13 @@ import Arrive from './agency/steering/arrive';
 export class Asleep extends AgentState {
   enter(a: Boid): void {
     a.steering.enabled = false;
-    a.g.alpha = 0;
+    a.visibility = 0;
   }
 }
 export class DozingOff extends AgentState {
   opacity = 1.0;
   enter(a: Boid): void {
-    a.g.alpha = this.opacity;
+    a.visibility = this.opacity;
   }
   execute(a: Boid): void {
     if (this.opacity > 0) {
@@ -24,13 +24,13 @@ export class DozingOff extends AgentState {
       a.fsm.transitionTo(new Asleep());
       a.steering.enabled = false;
     }
-    a.g.alpha = clamp(this.opacity);
+    a.visibility = clamp(this.opacity);
   }
 }
 export class Awake extends AgentState {
   enter(a: Boid): void {
     a.steering.enabled = true;
-    a.g.alpha = 1.0;
+    a.visibility = 1.0;
     a.direction = Vector.randomUnit().clone();
     a.smoother.reset();
   }
@@ -38,7 +38,7 @@ export class Awake extends AgentState {
 export class Waking extends AgentState {
   opacity = 0.0;
   enter(a: Boid): void {
-    a.g.alpha = this.opacity;
+    a.visibility = this.opacity;
   }
   execute(a: Boid): void {
     if (this.opacity < 1.0) {
@@ -46,7 +46,7 @@ export class Waking extends AgentState {
     } else {
       a.fsm.transitionTo(new Awake());
     }
-    a.g.alpha = clamp(this.opacity);
+    a.visibility = clamp(this.opacity);
   }
 }
 export class Reset extends AgentState {
@@ -59,13 +59,13 @@ export class Reset extends AgentState {
         BehaviourType.FollowPath) as FollowPath;
       if (fp && a.steering.path.finished && a.speed < 1.0) {
         a.reset(a.position);
-        a.g.alpha = 0;
+        a.visibility = 0;
         a.fsm.transitionTo(new Asleep());
       }
     }
     if (a.face.outOfBounds(a.position)) {
       a.reset(a.origin);
-      a.g.alpha = 0;
+      a.visibility = 0;
       a.fsm.transitionTo(new Asleep());
     }
   }

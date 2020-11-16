@@ -3,7 +3,7 @@ import { AABBInverted } from './aabb';
 import { clamp } from './random';
 import Agent from '../agent';
 
-class Cell<T> {
+export class Cell<T> {
 
   // All the entities inhabiting this cell
   members: Array<T> = [];

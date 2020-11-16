@@ -8,6 +8,7 @@ export default class Boid extends Agent {
   g: TransformNode;
 
   public sprotate: boolean = true;
+  public visibility: number = 1.0;
 
   constructor(
     radius: number,
@@ -29,6 +30,8 @@ export default class Boid extends Agent {
       }
       this.g.position.x = this.position.x;
       this.g.position.z = this.position.y;
+
+      this.g.setEnabled(this.visibility === 1.0);
     }
   }
 

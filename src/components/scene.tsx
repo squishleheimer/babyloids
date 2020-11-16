@@ -13,6 +13,7 @@ import BabylonScene from 'babylonjs-hook';
 import './scene.css';
 import DiagnosticFactory from '../core/diagnostic-factory';
 import Cursor from '../core/cursor';
+import { PointerEventTypes } from '@babylonjs/core';
 
 let babylonLink;
 
@@ -20,7 +21,7 @@ let stageFace: StageFace;
 
 const onSceneReady = scene => {
   // This creates and positions a free camera (non-mesh)
-  var camera = new FreeCamera("camera1", new Vector3(0, 50, -100), scene);
+  var camera = new FreeCamera("camera1", new Vector3(0, 250, -500), scene);
 
   // This targets the camera to scene origin
   camera.setTarget(Vector3.Zero());
@@ -36,78 +37,16 @@ const onSceneReady = scene => {
   // Default intensity is 1. Let's dim the light a small amount
   light.intensity = 0.7;
 
-  stageFace = new StageFace(
-    scene,
-    200,
-    200);
+  const w = 500;
+  const h = 500;
 
-  const arrow = DiagnosticFactory.createArrowDiagnostic(1.0);
-  arrow.isVisible = false;
-
-  stageFace.cursor.g = DiagnosticFactory.createCircleDiagnostic(
-    stageFace.cursor.radius,
-    stageFace.cursor.position
-  );
-
-  // Our built-in 'ground' shape.
-  const ground = MeshBuilder.CreateGround(
-    "ground",
-    {
-      width: 200,
-      height: 200
-    }, 
-    scene);
-
-  // Register click event on box mesh
-  ground.actionManager = new ActionManager(scene);
-
-  ground.actionManager.registerAction(
-    new ExecuteCodeAction(
-        ActionManager.OnPointerOverTrigger,
-        (evt) => {
-          stageFace.cursor.updatePosition(
-            stageFace.cursor.position,
-            new Vector(evt.pointerX, evt.pointerY));
-            stageFace.cursor.updateGraphics();
-        }
-    )
-  );
-
-  ground.actionManager.registerAction(
-    new ExecuteCodeAction(
-        ActionManager.OnPointerOutTrigger,
-        (evt) => {
-          //stageFace.cursor.g.visible = false;
-        }
-    )
-  );
-
-  ground.actionManager.registerAction(
-    new ExecuteCodeAction(
-        ActionManager.OnPickDownTrigger,
-        () => {
-          addAgent = true;
-        }
-    )
-  );
-  ground.actionManager.registerAction(
-    new ExecuteCodeAction(
-        ActionManager.OnPickUpTrigger,
-        () => {
-          addAgent = false;
-        }
-    )
-  );
+  stageFace = new StageFace(scene, w, h);
 }
 
-let addAgent: boolean = false;
 const onRender = scene => {
-  const deltaTimeInMilliseconds = scene.getEngine().getDeltaTime();
-  stageFace.tick(deltaTimeInMilliseconds * 0.001);
-
-  if (addAgent) {
-    stageFace.addAgent(Vector.ZERO);
-  }
+  const deltaTimeInSeconds = 
+    scene.getEngine().getDeltaTime() * 0.001;
+  stageFace.tick(deltaTimeInSeconds);
 }
 
 export default () => {

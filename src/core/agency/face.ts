@@ -15,6 +15,8 @@ import Path from './steering/path';
 export default class Face {
 
   // tslint:disable-next-line:variable-name
+  private _position: Vector;
+  // tslint:disable-next-line:variable-name
   private _rect: Vector;
   // tslint:disable-next-line:variable-name
   private _csp: CellSpacePartition;
@@ -29,6 +31,7 @@ export default class Face {
   // tslint:disable-next-line:variable-name
   private _pathFinder: PathFinder;
 
+  get position(): Vector { return this._position; }
   get rect(): Vector { return this._rect; }
   get csp(): CellSpacePartition { return this._csp; }
   get walls(): Wall[] { return this._walls; }
@@ -46,9 +49,11 @@ export default class Face {
   }
 
   constructor(
+    position: Vector,
     rect: Vector,
     private maxFacets: number,
     public enableNonPenetrationConstraint: boolean = true) {
+    this._position = position;
     this._rect = rect;
     this._csp = new CellSpacePartition(
       this._rect.x,
@@ -63,7 +68,8 @@ export default class Face {
       this._rect.x,
       this._rect.y,
       this.csp.cellsX * 4,
-      this.csp.cellsY * 4);
+      this.csp.cellsY * 4,
+      this.position);
     // createTriangleGrid(
     //   this._graph,
     //   500,
@@ -161,18 +167,12 @@ export default class Face {
     });
   }
 
-  outOfBounds(p: Vector): boolean {
-    // return (
-    //   p.x <= 0 ||
-    //   p.x >= this._rect.x ||
-    //   p.y <= 0 ||
-    //   p.y >= this._rect.y
-    // );
+  outOfBounds = (p: Vector): boolean => {
     return (
-      p.x <= - (this._rect.x * 0.5) ||
-      p.x >= (this._rect.x * 0.5) ||
-      p.y <= - (this._rect.y * 0.5) ||
-      p.y >= (this._rect.x * 0.5)
+      p.x <= this.position.x ||
+      p.x >= this._rect.x ||
+      p.y <= this.position.y ||
+      p.y >= this._rect.y
     );
   }
 

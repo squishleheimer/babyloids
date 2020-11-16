@@ -79,4 +79,13 @@ export class AABBInverted {
   get left(): number { return this._topLeft.x; }
   get bottom(): number { return this._bottomRight.y; }
   get right(): number { return this._bottomRight.x; }
+
+  get corners(): Vector[] {
+    return [
+      new Vector(this.left, this.top),
+      new Vector(this.right, this.top),
+      new Vector(this.right, this.bottom),
+      new Vector(this.left, this.bottom),
+    ]
+  };
 }

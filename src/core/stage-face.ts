@@ -1,4 +1,4 @@
-import { Scene, Mesh, TransformNode, Color3, InstancedMesh, AbstractMesh, LinesMesh } from '@babylonjs/core';
+import { Scene, Mesh, TransformNode, Color3, InstancedMesh, AbstractMesh, LinesMesh, Plane, Vector3, Epsilon, ActionManager, ExecuteCodeAction, PointerEventTypes, BoundingBox } from '@babylonjs/core';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 
 import Face from './agency/face';
@@ -13,6 +13,7 @@ import Cursor from './cursor';
 import { createInwardRectWalls } from './agency/steering/wall';
 import SteeringFactory from './agency/steering/factory';
 import Entity from './agency/steering/entity';
+import DiagnosticFactory from './diagnostic-factory';
 
 export class StageFace {
 
@@ -25,7 +26,7 @@ export class StageFace {
 
   cursor: Cursor = new Cursor(5.0);
   nodeDiagnostic: any = null;
-  mouseDown = false;
+  bAddAgent = false;
   timePassed = 0;
 
   constructor(
@@ -51,7 +52,8 @@ export class StageFace {
     if (p &&
       this.face.numberOfFacets() < this.MAX_AGENTS &&
       !this.face.outOfBounds(p)) {
-      return this.face.addAgent(new Boid(this.RADIUS, this.face, p));
+      return this.face.addAgent(
+        new Boid(this.RADIUS, this.face, p));
     }
   }
 
@@ -85,16 +87,112 @@ export class StageFace {
     w: number,
     h: number): void {
 
+    const arrow = DiagnosticFactory.createArrowDiagnostic(1.0);
+    arrow.isVisible = false;
+
+    this.cursor.g = DiagnosticFactory.createCircleDiagnostic(
+      this.cursor.radius,
+      this.cursor.position
+    );
+
+    this.scene.onPointerObservable.add((pointerInfo) => {
+      if (pointerInfo.pickInfo.hit === true) {
+        switch (pointerInfo.type) {
+          case PointerEventTypes.POINTERMOVE:
+            const p: Vector = new Vector(
+              pointerInfo.pickInfo.pickedPoint.x,
+              pointerInfo.pickInfo.pickedPoint.z);
+            this.cursor.updatePosition(
+              this.cursor.position,
+              new Vector(
+                pointerInfo.pickInfo.pickedPoint.x,
+                pointerInfo.pickInfo.pickedPoint.z)
+            );
+            if (!this.face.outOfBounds(p)) {
+              this.cursor.updatePosition(this.cursor.position, p);
+              const idx = this.face.csp.positionToIndex(p);
+              //txt.position.set(p.x, p.y);
+              //txt.text = `${idx}:${this.face.csp.cells[idx].members.length}`;
+            }
+            break;
+        }
+      }
+    });
+
+    // Our built-in 'ground' shape.
+    const plane = MeshBuilder.CreateGround(
+      "ground",
+      {
+        width: w,
+        height: h
+      }, 
+      this.scene);
+
+    plane.actionManager = new ActionManager(this.scene);
+
+    plane.actionManager.registerAction(
+      new ExecuteCodeAction(
+          ActionManager.OnPointerOverTrigger,
+          (evt) => {
+            this.cursor.g.setEnabled(true);
+            this.bAddAgent = false;
+          }
+      )
+    );
+
+    plane.actionManager.registerAction(
+      new ExecuteCodeAction(
+          ActionManager.OnPointerOutTrigger,
+          (evt) => {
+            this.cursor.g.setEnabled(false);
+            this.bAddAgent = false;
+          }
+      )
+    );
+
+    plane.actionManager.registerAction(
+      new ExecuteCodeAction(
+          ActionManager.OnPickDownTrigger,
+          (evt) => {
+            if (evt.sourceEvent?.button === 0) {
+              this.bAddAgent = true;
+            }
+            if (evt.sourceEvent?.button === 1) {
+              this.face.wipeAgents();
+            }
+          }
+      )
+    );
+
+    plane.actionManager.registerAction(
+      new ExecuteCodeAction(
+          ActionManager.OnPickUpTrigger,
+          (evt) => {
+            this.bAddAgent = false;
+          }
+      )
+    );
+
     this.face = new Face(
+      new Vector(-w*0.5,-h*0.5),
       new Vector(w, h),
       this.MAX_AGENTS,
       false);
+
+    this.face.outOfBounds = (p: Vector): boolean => {
+      const q = new Vector3(p.x, 0, p.y);
+      return plane.getBoundingInfo().intersectsPoint(q) === false;
+    }
 
     const cellRadius = this.face.csp.rect;
 
     // WALLS
     this.face.addWall(
-      ...createInwardRectWalls(this.face.rect));
+      ...createInwardRectWalls(this.face.rect, this.face.position));
+
+    this.face.walls.forEach(wall => {
+      return DiagnosticFactory.createWallDiagnostic(wall, this.scene);
+    });
 
     // this.stage.addChild(...this.face.walls.map(wall => {
     //   return DiagnosticFactory.createWallDiagnostic(wall);
@@ -133,14 +231,15 @@ export class StageFace {
       const m: LinesMesh = this.scene.getMeshByID("arrow") as LinesMesh;
       if (m) {
         a.g = m.createInstance("boid_" + this.face.facets.length)
+        a.g.setEnabled(false);
         a.updateEvent.on(_ => {
-          a.g.position.y = radius * 0.5;
+          a.g.position.y = 0.1;
         });
       } else {
         return;
       }
 
-      a.steering.viewDistance = Math.min(cellRadius.x, cellRadius.y);
+      a.steering.viewDistance = Math.max(cellRadius.x, cellRadius.y);
       a.steering.cellSpaceEnabled = true;
 
       // a.g.addChild(
@@ -160,11 +259,11 @@ export class StageFace {
 
       const behaviours = [
         //BehaviourType.ObstacleAvoidance,
-        //BehaviourType.WallAvoidance,
+        BehaviourType.WallAvoidance,
         BehaviourType.Alignment,
         BehaviourType.Cohesion,
         BehaviourType.Separation,
-        BehaviourType.Wander,
+        //BehaviourType.Wander,
         //BehaviourType.FollowPath,
         // BehaviourType.Evade,
         // BehaviourType.Arrive,
@@ -178,7 +277,7 @@ export class StageFace {
         return SteeringFactory.createSteeringBehaviour({
           type: b,
           agent: a,
-          seekDistance: a.radius * 3,
+          seekDistance: a.steering.viewDistance,
           position: Vector.ZERO,
           otherA,
           otherB,
@@ -256,7 +355,7 @@ export class StageFace {
       // });
 
       a.removeEvent.on((_: Agent) => {
-        //this.scene.removeMesh(a.g);
+        this.scene.removeMesh(a.g as Mesh);
         // this.stage.removeChild(ad);
         // if (pp) {
         //   this.stage.removeChild(pp);
@@ -304,9 +403,7 @@ export class StageFace {
       this.poke();
     };
 
-    // this.diagnostics.push(
-    //   DiagnosticFactory.createCellSpaceDiagnostic(this.face.csp)
-    // );
+    DiagnosticFactory.createCellSpaceDiagnostic(this.face);
 
     this.addDiagnostics();
 
@@ -320,30 +417,6 @@ export class StageFace {
     //   DiagnosticFactory.createTextStyle(18));
     // txt.anchor.set(1);
     // this.stage.addChild(txt);
-
-    // this.scene.on('mousemove', (evt: PIXI.InteractionEvent) => {
-    //   const p = Vector.from(evt.data.global);
-    //   if (!this.face.outOfBounds(p)) {
-    //     this.cursor.updatePosition(this.cursor.position, p);
-    //     const idx = this.face.csp.positionToIndex(p);
-    //     txt.position.set(p.x, p.y);
-    //     txt.text = `${idx}:${this.face.csp.cells[idx].members.length}`;
-    //   }
-    // });
-
-    // this.scene.on('mousedown', (evt: PIXI.InteractionEvent) => {
-    //   // this.face.wipeAgents();
-    //   this.cursor.g.alpha = 0;
-    //   this.mouseDown = true;
-    // });
-
-    // this.scene.on('mouseup', (evt: PIXI.InteractionEvent) => {
-    //   this.cursor.g.alpha = 0.3;
-    //   this.addAgent();
-    //   // const o = this.addObstacle(this.cursor.radius, this.cursor.position.copy());
-    //   // this.face.enforceNonPenetrationConstraint(o, this.face.obstacles);
-    //   this.mouseDown = false;
-    // });
   }
 
   // Listen for animate update
@@ -351,8 +424,8 @@ export class StageFace {
     this.timePassed += deltaTimeInSeconds;
     this.face.tick(deltaTimeInSeconds);
 
-    if (this.mouseDown) {
-      this.addAgent();
+    if (this.cursor) {
+      this.cursor.updateGraphics();
     }
 
     if (this.nodeDiagnostic) {
@@ -361,14 +434,12 @@ export class StageFace {
 
     this.poke();
 
-    if (this.timePassed > randInRange(0.1, 0.2)) {
+    if (this.timePassed > randInRange(0.01, 0.02)) {
       this.timePassed = 0;
       this.poke();
-      // if (!this.mouseDown) {
-      //   this.addAgent(
-      //     Vector.randInRect(
-      //       this.face.rect));
-      // }
+      if (this.bAddAgent) {
+        this.addAgent();
+      }
     }
 
     this.face.obstacles.forEach(o => {

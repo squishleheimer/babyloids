@@ -58,11 +58,12 @@ export function createInwardcircularWall(
   });
 }
 
-export function createInwardRectWalls(rect: Vector): Wall[] {
+export function createInwardRectWalls(rect: Vector, offset: Vector): Wall[] {
+  const halfRect = rect.mult(0.5);
   return [
-    new Wall(Vector.ZERO, new Vector(rect.x, 0)),
-    new Wall(new Vector(rect.x, 0), rect.clone()),
-    new Wall(rect.clone(), new Vector(0, rect.y)),
-    new Wall(new Vector(0, rect.y), Vector.ZERO)
+    new Wall(offset.clone(), new Vector(halfRect.x, offset.y)),
+    new Wall(new Vector(halfRect.x, offset.y), halfRect.clone()),
+    new Wall(halfRect.clone(), new Vector(offset.x, halfRect.y)),
+    new Wall(new Vector(offset.x, halfRect.y), offset.clone())
   ];
 }
