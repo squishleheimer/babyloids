@@ -12,6 +12,7 @@ import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 import BabylonScene from 'babylonjs-hook';
 import './scene.css';
 import DiagnosticFactory from '../core/diagnostic-factory';
+import Cursor from '../core/cursor';
 
 let babylonLink;
 
@@ -43,11 +44,44 @@ const onSceneReady = scene => {
   const arrow = DiagnosticFactory.createArrowDiagnostic(1.0);
   arrow.isVisible = false;
 
+  stageFace.cursor.g = DiagnosticFactory.createCircleDiagnostic(
+    stageFace.cursor.radius,
+    stageFace.cursor.position
+  );
+
   // Our built-in 'ground' shape.
-  const ground = MeshBuilder.CreateGround("ground", {width: 200, height: 200}, scene);
+  const ground = MeshBuilder.CreateGround(
+    "ground",
+    {
+      width: 200,
+      height: 200
+    }, 
+    scene);
 
   // Register click event on box mesh
   ground.actionManager = new ActionManager(scene);
+
+  ground.actionManager.registerAction(
+    new ExecuteCodeAction(
+        ActionManager.OnPointerOverTrigger,
+        (evt) => {
+          stageFace.cursor.updatePosition(
+            stageFace.cursor.position,
+            new Vector(evt.pointerX, evt.pointerY));
+            stageFace.cursor.updateGraphics();
+        }
+    )
+  );
+
+  ground.actionManager.registerAction(
+    new ExecuteCodeAction(
+        ActionManager.OnPointerOutTrigger,
+        (evt) => {
+          //stageFace.cursor.g.visible = false;
+        }
+    )
+  );
+
   ground.actionManager.registerAction(
     new ExecuteCodeAction(
         ActionManager.OnPickDownTrigger,
@@ -72,9 +106,7 @@ const onRender = scene => {
   stageFace.tick(deltaTimeInMilliseconds * 0.001);
 
   if (addAgent) {
-    stageFace.addAgent(
-      Vector.randInRect(
-        stageFace.face.rect));
+    stageFace.addAgent(Vector.ZERO);
   }
 }
 

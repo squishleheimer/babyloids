@@ -8,7 +8,7 @@ import Vector from './agency/math/vector';
 import { BehaviourType } from './agency/steering/steering';
 import { Waking, DozingOff, Asleep, Reset, Awake } from './states';
 import { randInRange, randomIntFromInterval } from './agency/math/random';
-import PixiObstacle from './pixi-obstacle';
+import Obstacle from './obstacle';
 import Cursor from './cursor';
 import { createInwardRectWalls } from './agency/steering/wall';
 import SteeringFactory from './agency/steering/factory';
@@ -23,7 +23,7 @@ export class StageFace {
 
   diagnostics = [];
 
-  cursor: Cursor = new Cursor(50.0);
+  cursor: Cursor = new Cursor(5.0);
   nodeDiagnostic: any = null;
   mouseDown = false;
   timePassed = 0;
@@ -383,8 +383,8 @@ export class StageFace {
 
   addObstacle(
     radius: number = this.face.csp.cellHypotenuse * 0.5,
-    position: Vector = Vector.randInRect(this.face.rect, radius)): PixiObstacle {
-    const po = new PixiObstacle(radius, position);
+    position: Vector = Vector.randInRect(this.face.rect, radius)): Obstacle {
+    const po = new Obstacle(radius, position);
     this.face.addObstacle(po);
     // this.scene.addChild(DiagnosticFactory.createObstacleDiagnostic(po));
     return po;

@@ -1,8 +1,8 @@
 import Wall from './agency/steering/wall';
 import Agent from './agency/agent';
 import CellSpacePartition from './agency/math/cell-space-partition';
-import { isoscelesInscribedInCircle } from './agency/math/geometry';
-import PixiObstacle from './pixi-obstacle';
+import { createCircleVertices, isoscelesInscribedInCircle } from './agency/math/geometry';
+import Obstacle from './obstacle';
 import Wander from './agency/steering/wander';
 import ObstacleAvoidance from './agency/steering/obstacle-avoidance';
 import WallAvoidance from './agency/steering/wall-avoidance';
@@ -12,6 +12,7 @@ import { BehaviourType } from './agency/steering/steering';
 import FollowPath from './agency/steering/follow-path';
 import { NodeIterator } from './agency/math/graph/sparse-graph';
 import { Color3, Color4, LinesMesh, MeshBuilder, Vector3 } from '@babylonjs/core';
+import Vector from './agency/math/vector';
 
 const colours:Color4[] = [
   Color4.FromColor3(Color3.Blue(), 1.0),
@@ -46,20 +47,23 @@ export default class DiagnosticFactory {
 
   static createCircleDiagnostic(
     radius: number,
-    segments: number = 0.75,
+    centre: Vector,
+    segments: number = 12,
     {
       alpha = 0.6
     } = {}): LinesMesh {
       
-    const points = isoscelesInscribedInCircle(radius, xRatio)
-          .map(p => new Vector3(p.x, 0, p.y));
-
-    points.push(points[0].clone());
+    const points = createCircleVertices(
+      radius,
+      centre,
+      Math.PI / segments)
+        .map(p => new Vector3(p.x, 0, p.y));
 
     return MeshBuilder.CreateLines(
-      "arrow",
+      "circle",
       {
-        points: points
+        points: points,
+        colors: points.map(_ => Color4.FromColor3(Color3.Black(), alpha))
       });
   }
 }

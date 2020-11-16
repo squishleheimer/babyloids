@@ -1,11 +1,11 @@
-import { TransformNode } from '@babylonjs/core';
+import { Mesh } from '@babylonjs/core';
 
 import Vector from './agency/math/vector';
 import Entity from './agency/steering/entity';
 
-export default class PixiObstacle extends Entity {
+export default class Obstacle extends Entity {
 
-  g: TransformNode;
+  g: Mesh;
 
   constructor(radius: number, position: Vector) {
     super(radius, position);
@@ -33,7 +33,7 @@ export default class PixiObstacle extends Entity {
   }
 
   public get enabled(): boolean {
-    return true; // return (this.g) ? this.g.alpha > 0 : false;
+    return (this.g) ? this.g.visibility > 0 : false;
   }
 
 }

@@ -40,7 +40,8 @@ export default class Cursor extends Entity {
 
   public updateGraphics(): void {
     if (this.g) {
-      this.g.position.x = this.position.x
+      this.g.position.x = this.position.x;
+      this.g.position.z = this.position.y;
       // this.g
       //   .clear()
       //   .lineStyle(1, 0xFFFFFF, 1)
