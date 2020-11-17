@@ -6,7 +6,7 @@ export default class Alignment extends SteeringBehaviour {
   owner: Agent;
 
   constructor(owner: Agent) {
-    super(4, 1.0, 0.8);
+    super(4, 1.0, 0.2);
 
     this.owner = owner;
   }

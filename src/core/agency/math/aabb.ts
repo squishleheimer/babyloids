@@ -80,6 +80,9 @@ export class AABBInverted {
   get bottom(): number { return this._bottomRight.y; }
   get right(): number { return this._bottomRight.x; }
 
+  get width(): number { return (this.right - this.left) * 0.5; }
+  get height(): number { return (this.top - this.bottom) * 0.5; }
+
   get corners(): Vector[] {
     return [
       new Vector(this.left, this.top),

@@ -7,7 +7,7 @@ export default class Cohesion extends SteeringBehaviour {
   owner: Agent;
 
   constructor(owner: Agent) {
-    super(4, 2.0, 0.3);
+    super(4, 2.0, 0.2);
 
     this.owner = owner;
   }

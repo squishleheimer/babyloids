@@ -31,5 +31,3 @@
 ### Triggers
 
 - <https://doc.babylonjs.com/divingDeeper/events/actions#triggers>
-
-

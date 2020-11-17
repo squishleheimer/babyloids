@@ -11,11 +11,11 @@ import { NavGraph } from './agency/math/graph/handy-graph-functions';
 import { BehaviourType } from './agency/steering/steering';
 import FollowPath from './agency/steering/follow-path';
 import { NodeIterator } from './agency/math/graph/sparse-graph';
-import { Color3, Color4, LinesMesh, MeshBuilder, Scene, Vector3 } from '@babylonjs/core';
+import { Color3, Color4, DynamicTexture, LinesMesh, Mesh, MeshBuilder, Scene, StandardMaterial, Vector3 } from '@babylonjs/core';
 import Vector from './agency/math/vector';
 import Face from './agency/face';
 
-const colours:Color4[] = [
+const colours: Color4[] = [
   Color4.FromColor3(Color3.Blue(), 1.0),
   Color4.FromColor3(Color3.Red(), 1.0),
   Color4.FromColor3(Color3.Green(), 1.0),
@@ -28,21 +28,22 @@ export default class DiagnosticFactory {
 
   static createArrowDiagnostic(
     radius: number,
-    xRatio: number = 0.75,
+    xRatio: number = 0.75,    
     {
       alpha = 1.0
-    } = {}): LinesMesh {
-      
+    } = {},
+    colour: Color4 = Color4.FromColor3(Color3.White(), alpha)): LinesMesh {
+
     const points = isoscelesInscribedInCircle(radius, xRatio)
-          .map(p => new Vector3(p.x, 0, p.y));
+      .map(p => new Vector3(p.x, 0, p.y));
 
     points.push(points[0].clone());
-    
+
     return MeshBuilder.CreateLines(
       "arrow",
       {
         points: points,
-        colors: points.map(_ => Color4.FromColor3(Color3.Black(), alpha))
+        colors: points.map(_ => colour)
       });
   }
 
@@ -52,13 +53,13 @@ export default class DiagnosticFactory {
     segments: number = 12,
     {
       alpha = 0.6
-    } = {}): LinesMesh {
-      
+    } = {}): Mesh {
+
     const points = createCircleVertices(
       radius,
       centre,
       Math.PI / segments)
-        .map(p => new Vector3(p.x, 0, p.y));
+      .map(p => new Vector3(p.x, 0, p.y));
 
     return MeshBuilder.CreateLines(
       "circle",
@@ -68,38 +69,73 @@ export default class DiagnosticFactory {
       });
   }
 
-  static createCellSpaceDiagnostic(face: Face): LinesMesh[] {
-    return face.csp.cells.map((cell, idx) => {
-      return DiagnosticFactory.createCellDiagnostic(cell, idx, face.position);
+  static createCellSpaceDiagnostic(
+    face: Face,
+    scene: Scene,
+    surface: Mesh): Mesh[] {
+
+    const surfaceTexture = new DynamicTexture(
+      "cell_space",
+      {
+        width: 1024,
+        height: 1024
+      },
+      scene,
+      false);
+
+    const surfaceMaterial = new StandardMaterial("Mat", scene);
+    surfaceMaterial.diffuseTexture = surfaceTexture;
+    surface.material = surfaceMaterial;
+
+    const surfaceWidth = 
+      surface.getBoundingInfo().boundingBox.maximum.x - 
+      surface.getBoundingInfo().boundingBox.minimum.x;
+    const surfaceHeight = 
+      surface.getBoundingInfo().boundingBox.maximum.z - 
+      surface.getBoundingInfo().boundingBox.minimum.z;
+
+    const xScale = surfaceTexture.getSize().width / surfaceWidth;
+    const yScale = surfaceTexture.getSize().height / surfaceHeight;
+
+    const meshes = face.csp.cells.map((cell, idx) => {
+
+      surfaceTexture.drawText(
+        `${idx}:0`,
+        (cell.BBox.centre.x - cell.BBox.width) * xScale,
+        (cell.BBox.centre.y - cell.BBox.height) * yScale,
+        "bold 24px monospace",
+        "gray",
+        null,
+        true,
+        false);
+
+      const mesh = DiagnosticFactory.createCellDiagnostic(
+        cell, idx, surface, face.position);
+
+      // mesh.onBeforeDraw()
+
+      // if (!this.face.outOfBounds(p)) {
+      //   this.cursor.updatePosition(this.cursor.position, p);
+      //   const idx = this.face.csp.positionToIndex(p);
+      //   console.log(`${idx}:${this.face.csp.cells[idx].members.length}`);
+      //   //txt.position.set(p.x, p.y);
+      //   //txt.text = `${idx}:${this.face.csp.cells[idx].members.length}`;
+      // }
+      
+      return mesh;
     });
+
+    surfaceTexture.update();
+
+    return meshes;
   }
 
   static createCellDiagnostic(
     cell: Cell<Agent>,
-    idx: number, 
-    offset: Vector): LinesMesh {
-    // const c = new PIXI.Container();
-    // const t = new PIXI.Text(
-    //   `${idx}`,
-    //   DiagnosticFactory.createTextStyle(14));
-    // t.anchor.set(0.5);
-    // c.addChild(t);
-    // t.setTransform(
-    //   cell.BBox.centre.x,
-    //   cell.BBox.centre.y);
-    // const b = new PIXI.Graphics()
-    //   .clear()
-    //   .lineStyle(1, 0x000000, 0.1)
-    //   .beginFill(0xff00ff, 0.0)
-    //   .drawRect(
-    //     cell.BBox.bottomLeft.x,
-    //     cell.BBox.bottomLeft.y,
-    //     cell.BBox.right - cell.BBox.left,
-    //     cell.BBox.bottom - cell.BBox.top
-    //   )
-    //   .endFill();
-    // c.addChild(b);
-    // return c;
+    idx: number,
+    surface: Mesh,
+    offset: Vector): Mesh {
+
     const corners = cell.BBox.corners;
     corners.push(corners[0]);
     const points: Vector[] = corners.map(c => c.add(offset));
@@ -107,35 +143,26 @@ export default class DiagnosticFactory {
       `cell_${idx}`,
       {
         points: points.map(c => new Vector3(c.x, 0, c.y)),
-        colors: points.map(_ => Color4.FromColor3(Color3.Black(), 1.0))
+        colors: points.map(_ => Color4.FromColor3(Color3.White(), 1.0))
       });
-  }
-
-  static createTextStyle(fSize: number = 10): any {
-    return {
-      fontFamily : 'Fira Code',
-      fontSize: fSize,
-      fill : 0x555555,
-      align : 'center'
-    };
   }
 
   static createWallDiagnostic(
     w: Wall,
     scene: Scene,
-    normalLength: number = 10): LinesMesh {
+    normalLength: number = 10): Mesh {
     const c = w.centre();
     const d = c.add(w.N.mult(normalLength));
 
     const lines = [
-      [	new Vector3(w.A.x, 0, w.A.y),
-        new Vector3(w.B.x, 0, w.A.y)
+      [new Vector3(w.A.x, 0, w.A.y),
+      new Vector3(w.B.x, 0, w.A.y)
       ],
-      [	new Vector3(c.x, 0, c.y),
-        new Vector3(d.x, 0, d.y)
+      [new Vector3(c.x, 0, c.y),
+      new Vector3(d.x, 0, d.y)
       ]
     ];
-    
+
     return MeshBuilder.CreateLineSystem(
       `wall_${w}`,
       {

@@ -18,7 +18,7 @@ import DiagnosticFactory from './diagnostic-factory';
 export class StageFace {
 
   private readonly MAX_AGENTS = 500;
-  private readonly RADIUS = randomIntFromInterval(5, 10);
+  private readonly RADIUS = 0.5;//randomIntFromInterval(1.0, 6.0);
 
   public face: Face;
 
@@ -87,7 +87,7 @@ export class StageFace {
     w: number,
     h: number): void {
 
-    const arrow = DiagnosticFactory.createArrowDiagnostic(1.0);
+    const arrow = DiagnosticFactory.createArrowDiagnostic(this.RADIUS);
     arrow.isVisible = false;
 
     this.cursor.g = DiagnosticFactory.createCircleDiagnostic(
@@ -111,6 +111,7 @@ export class StageFace {
             if (!this.face.outOfBounds(p)) {
               this.cursor.updatePosition(this.cursor.position, p);
               const idx = this.face.csp.positionToIndex(p);
+              console.log(`${idx}:${this.face.csp.cells[idx].members.length}`);
               //txt.position.set(p.x, p.y);
               //txt.text = `${idx}:${this.face.csp.cells[idx].members.length}`;
             }
@@ -188,6 +189,11 @@ export class StageFace {
 
     const cellRadius = this.face.csp.rect;
 
+    DiagnosticFactory.createCellSpaceDiagnostic(
+      this.face,
+      this.scene,
+      plane);
+
     // WALLS
     this.face.addWall(
       ...createInwardRectWalls(this.face.rect, this.face.position));
@@ -219,7 +225,7 @@ export class StageFace {
     // AGENTS
     this.face.onAdd = (a: Boid) => {
 
-      const radius = 1.0;//randomIntFromInterval(5, 50); // = this.RADIUS;
+      const radius = this.RADIUS;
 
       // const ad = this.stage.addChild(new PIXI.Container());
       // ad.addChild(DiagnosticFactory.createArrowDiagnostic(radius));
@@ -404,8 +410,6 @@ export class StageFace {
 
       this.poke();
     };
-
-    DiagnosticFactory.createCellSpaceDiagnostic(this.face);
 
     this.addDiagnostics();
 

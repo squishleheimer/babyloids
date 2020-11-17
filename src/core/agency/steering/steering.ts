@@ -182,7 +182,9 @@ export default class Steering {
       } else {
         // calculate neighbours in cell-space if any of the following 3 group
         // behaviors are switched on
-        this.owner.face.csp.calculateNeighbours(this.owner.position, this.viewDistance);
+        this.owner.face.csp.calculateNeighbours(
+          this.owner.position, 
+          this.viewDistance);
       }
     }
 
