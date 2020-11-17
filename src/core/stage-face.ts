@@ -127,6 +127,8 @@ export class StageFace {
         height: h
       }, 
       this.scene);
+    plane.position.x = w * 0.5;
+    plane.position.z = h * 0.5;
 
     plane.actionManager = new ActionManager(this.scene);
 
@@ -174,10 +176,10 @@ export class StageFace {
     );
 
     this.face = new Face(
-      new Vector(-w*0.5,-h*0.5),
+      Vector.ZERO.clone(), // new Vector(-w*0.5,-h*0.5),
       new Vector(w, h),
       this.MAX_AGENTS,
-      false);
+      true);
 
     this.face.outOfBounds = (p: Vector): boolean => {
       const q = new Vector3(p.x, 0, p.y);
@@ -263,7 +265,7 @@ export class StageFace {
         BehaviourType.Alignment,
         BehaviourType.Cohesion,
         BehaviourType.Separation,
-        //BehaviourType.Wander,
+        BehaviourType.Wander,
         //BehaviourType.FollowPath,
         // BehaviourType.Evade,
         // BehaviourType.Arrive,

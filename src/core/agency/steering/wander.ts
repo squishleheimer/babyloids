@@ -13,7 +13,7 @@ export default class Wander extends SteeringBehaviour {
   wanderTarget: Vector;
 
   constructor(owner: Agent) {
-    super(5, 1.0, 0.8);
+    super(5, 1.0, 0.3);
 
     this.owner = owner;
 

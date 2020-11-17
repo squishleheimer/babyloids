@@ -61,9 +61,9 @@ export function createInwardcircularWall(
 export function createInwardRectWalls(rect: Vector, offset: Vector): Wall[] {
   const halfRect = rect.mult(0.5);
   return [
-    new Wall(offset.clone(), new Vector(halfRect.x, offset.y)),
-    new Wall(new Vector(halfRect.x, offset.y), halfRect.clone()),
-    new Wall(halfRect.clone(), new Vector(offset.x, halfRect.y)),
-    new Wall(new Vector(offset.x, halfRect.y), offset.clone())
+    new Wall(offset.clone(), new Vector(rect.x, offset.y)),
+    new Wall(new Vector(rect.x, offset.y), rect.clone()),
+    new Wall(rect.clone(), new Vector(offset.x, rect.y)),
+    new Wall(new Vector(offset.x, rect.y), offset.clone())
   ];
 }

@@ -20,11 +20,15 @@ let babylonLink;
 let stageFace: StageFace;
 
 const onSceneReady = scene => {
+
+  const w = 500;
+  const h = 500;
+
   // This creates and positions a free camera (non-mesh)
-  var camera = new FreeCamera("camera1", new Vector3(0, 250, -500), scene);
+  var camera = new FreeCamera("camera1", new Vector3(250, 250, -250), scene);
 
   // This targets the camera to scene origin
-  camera.setTarget(Vector3.Zero());
+  camera.setTarget(new Vector3(250, 0, 250));
 
   const canvas = scene.getEngine().getRenderingCanvas();
 
@@ -36,9 +40,6 @@ const onSceneReady = scene => {
 
   // Default intensity is 1. Let's dim the light a small amount
   light.intensity = 0.7;
-
-  const w = 500;
-  const h = 500;
 
   stageFace = new StageFace(scene, w, h);
 }

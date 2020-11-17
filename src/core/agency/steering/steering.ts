@@ -41,8 +41,8 @@ export default class Steering {
 
   steeringForce: Vector = Vector.ZERO;
 
-  viewDistance = 200;
-  cellSpaceEnabled = true;
+  viewDistance = 0;
+  cellSpaceEnabled = false;
 
   constructor(
     public owner: any,
@@ -207,7 +207,7 @@ export default class Steering {
   // ---------------------- CalculatePrioritized ----------------------------
   //
   //  this method calls each active steering behavior in order of priority
-  //  and acumulates their forces until the max steering force magnitude
+  //  and accumulates their forces until the max steering force magnitude
   //  is reached, at which time the function returns the steering force
   //  accumulated to that  point
   // ------------------------------------------------------------------------
