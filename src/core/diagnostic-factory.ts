@@ -50,7 +50,7 @@ export default class DiagnosticFactory {
   static createCircleDiagnostic(
     radius: number,
     centre: Vector,
-    segments: number = 12,
+    segments: number = 18,
     {
       alpha = 0.6
     } = {}): Mesh {
@@ -78,39 +78,10 @@ export default class DiagnosticFactory {
       bgColor = "gray",
     } = {}): Mesh[] {
 
-    //surface.setEnabled(false);
-
-    // const surfaceTexture = new DynamicTexture(
-    //   "cell_space",
-    //   {
-    //     width: 64,
-    //     height: 64
-    //   },
-    //   scene,
-    //   true,
-    //   Texture.TRILINEAR_SAMPLINGMODE);
-
-    // const surfaceMaterial = new StandardMaterial("Mat", scene);
-    // surfaceMaterial.diffuseTexture = surfaceTexture;
-    //surface.material = surfaceMaterial;
-
-    const surfaceWidth = 
-      surface.getBoundingInfo().boundingBox.maximum.x - 
-      surface.getBoundingInfo().boundingBox.minimum.x;
-    const surfaceHeight = 
-      surface.getBoundingInfo().boundingBox.maximum.z - 
-      surface.getBoundingInfo().boundingBox.minimum.z;
-
     const mat = new StandardMaterial(
       `cell_mat`, 
       scene);
-
-    mat.diffuseColor = new Color3(1, 0, 1);
-    mat.specularColor = new Color3(0.5, 0.6, 0.87);
-    mat.emissiveColor = new Color3(1, 1, 1);
-    mat.ambientColor = new Color3(0.23, 0.98, 0.53);
     mat.alpha = 0.0;
-
     surface.material = mat;
 
     const meshes = face.csp.cells.map((cell, idx) => {
@@ -118,16 +89,12 @@ export default class DiagnosticFactory {
       const mesh = MeshBuilder.CreateGround(
         `cell_${idx}`,
         {
-          width: Math.abs(cell.BBox.width),
-          height: Math.abs(cell.BBox.height),
-          updatable: true
+          width: cell.BBox.width,
+          height: cell.BBox.height
         }, scene);
-      
-      // const mesh = DiagnosticFactory.createCellDiagnostic(
-      //   cell, idx, surface, face.position);
 
       DiagnosticFactory.createCellDiagnostic(
-        cell, idx, surface, face.position);
+        cell, idx, face.position);
 
       mesh.position.x = cell.BBox.centre.x;
       mesh.position.z = cell.BBox.centre.y;
@@ -154,15 +121,27 @@ export default class DiagnosticFactory {
 
       mesh.material = cellMaterial;
 
+      // const cellWidth = 
+      //   mesh.getBoundingInfo().boundingBox.maximum.z - 
+      //   mesh.getBoundingInfo().boundingBox.minimum.z;
+
+      const cellHeight = 
+        mesh.getBoundingInfo().boundingBox.maximum.z - 
+        mesh.getBoundingInfo().boundingBox.minimum.z;
+
+      //const xScale = cellTexture.getSize().width / cellWidth;
+      const yScale = cellTexture.getSize().height / cellHeight;
+
       const draw = () => {
-        const text = `${idx}:${face.csp.cells[idx].members.length}`;
+        const count = face.csp.cells[idx].members.length;
+        const text = `${idx}:${count}`;
         cellTexture.drawText(
-          text,
-          0,//(cell.BBox.centre.x - cell.BBox.width * 0.5),
-          cell.BBox.height,//((surfaceHeight - cell.BBox.centre.y) - cell.BBox.height * 0.5) * yScale,
-          "bold 24px monospace",
+          count === 0 ? `${idx}`: text,
+          0,
+          cellHeight * yScale,
+          count === 0 ? "24px monospace" : "bold 44px monospace",
           textColor,
-          bgColor,//idx === 0 ? bgColor : null,
+          bgColor,
           true,
           true);
       };
@@ -172,15 +151,12 @@ export default class DiagnosticFactory {
       return mesh;
     });
 
-    //surfaceTexture.update();
-
     return meshes;
   }
 
   static createCellDiagnostic(
     cell: Cell<Agent>,
     idx: number,
-    surface: Mesh,
     offset: Vector): Mesh {
 
     const corners = cell.BBox.corners;

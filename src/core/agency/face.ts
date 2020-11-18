@@ -59,7 +59,7 @@ export default class Face {
       this._rect.x,
       this._rect.y,
       7,
-      5,
+      7,
      this.maxFacets
     );
     this._graph = new NavGraph();
