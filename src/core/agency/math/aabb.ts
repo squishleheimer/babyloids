@@ -2,41 +2,53 @@ import Vector from './vector';
 
 export class AABB {
 
-  private bottomLeft: Vector;
-  private topRight: Vector;
-  private center: Vector;
+  private _bottomLeft: Vector;
+  private _topRight: Vector;
+  private _centre: Vector;
 
-  constructor(
+  constructor(  
     tl: Vector,
     br: Vector) {
-    this.bottomLeft = tl;
-    this.topRight = br;
-    this.center = tl.add(br).div(2.0);
+    this._bottomLeft = tl;
+    this._topRight = br;
+    this._centre = tl.add(br).div(2.0);
   }
 
   hypotenuseLength(): number {
-    return this.BottomLeft().distanceTo(this.TopRight());
+    return this.bottomLeft.distanceTo(this.topRight);
   }
 
   // returns true if the bbox described by
   // other intersects with this one.
   isOverlappedWith(other: AABB): boolean {
     return !(
-      other.Top() < this.Bottom() ||
-      other.Bottom() > this.Top() ||
-      other.Left() > this.Right() ||
-      other.Right() < this.Left()
+      other.top < this.bottom ||
+      other.bottom > this.top ||
+      other.left > this.right ||
+      other.right < this.left
     );
   }
 
-  BottomLeft(): Vector { return this.bottomLeft; }
-  TopRight(): Vector { return this.topRight; }
-  Center(): Vector { return this.center; }
+  get bottomLeft(): Vector { return this._bottomLeft; }
+  get topRight(): Vector { return this._topRight; }
+  get centre(): Vector { return this._centre; }
 
-  Top(): number { return this.topRight.y; }
-  Left(): number { return this.bottomLeft.x; }
-  Bottom(): number { return this.bottomLeft.y; }
-  Right(): number { return this.topRight.x; }
+  get top(): number { return this._topRight.y; }
+  get left(): number { return this._bottomLeft.x; }
+  get bottom(): number { return this._bottomLeft.y; }
+  get right(): number { return this._topRight.x; }
+
+  get width(): number { return Math.abs(this.right - this.left); }
+  get height(): number { return Math.abs(this.top - this.bottom); }
+
+  get corners(): Vector[] {
+    return [
+      new Vector(this.left, this.top),
+      new Vector(this.right, this.top),
+      new Vector(this.right, this.bottom),
+      new Vector(this.left, this.bottom),
+    ]
+  };
 }
 
 export class AABBInverted {
@@ -80,8 +92,8 @@ export class AABBInverted {
   get bottom(): number { return this._bottomRight.y; }
   get right(): number { return this._bottomRight.x; }
 
-  get width(): number { return (this.right - this.left) * 0.5; }
-  get height(): number { return (this.top - this.bottom) * 0.5; }
+  get width(): number { return (this.right - this.left); }
+  get height(): number { return (this.top - this.bottom); }
 
   get corners(): Vector[] {
     return [

@@ -81,6 +81,9 @@ export default class DiagnosticFactory {
         height: 1024
       },
       scene,
+      true,
+      undefined,
+      undefined,
       false);
 
     const surfaceMaterial = new StandardMaterial("Mat", scene);
@@ -101,10 +104,10 @@ export default class DiagnosticFactory {
 
       surfaceTexture.drawText(
         `${idx}:0`,
-        (cell.BBox.centre.x - cell.BBox.width) * xScale,
-        (cell.BBox.centre.y - cell.BBox.height) * yScale,
+        (cell.BBox.centre.x - cell.BBox.width * 0.5) * xScale,
+        (cell.BBox.centre.y - cell.BBox.height * 0.5) * yScale,
         "bold 24px monospace",
-        "gray",
+        "white",
         null,
         true,
         false);

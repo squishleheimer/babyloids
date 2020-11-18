@@ -177,7 +177,7 @@ export class StageFace {
     );
 
     this.face = new Face(
-      Vector.ZERO.clone(), // new Vector(-w*0.5,-h*0.5),
+      Vector.ZERO.clone(),
       new Vector(w, h),
       this.MAX_AGENTS,
       true);
