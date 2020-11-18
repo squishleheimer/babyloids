@@ -24,6 +24,7 @@ export class StageFace {
 
   diagnostics = [];
 
+  plane: Mesh;
   cursor: Cursor = new Cursor(5.0);
   nodeDiagnostic: any = null;
   bAddAgent = false;
@@ -110,71 +111,11 @@ export class StageFace {
             );
             if (!this.face.outOfBounds(p)) {
               this.cursor.updatePosition(this.cursor.position, p);
-              const idx = this.face.csp.positionToIndex(p);
-              console.log(`${idx}:${this.face.csp.cells[idx].members.length}`);
-              //txt.position.set(p.x, p.y);
-              //txt.text = `${idx}:${this.face.csp.cells[idx].members.length}`;
             }
             break;
         }
       }
     });
-
-    // Our built-in 'ground' shape.
-    const plane = MeshBuilder.CreateGround(
-      "ground",
-      {
-        width: w,
-        height: h
-      }, 
-      this.scene);
-    plane.position.x = w * 0.5;
-    plane.position.z = h * 0.5;
-
-    plane.actionManager = new ActionManager(this.scene);
-
-    plane.actionManager.registerAction(
-      new ExecuteCodeAction(
-          ActionManager.OnPointerOverTrigger,
-          (evt) => {
-            this.cursor.g.setEnabled(true);
-            this.bAddAgent = false;
-          }
-      )
-    );
-
-    plane.actionManager.registerAction(
-      new ExecuteCodeAction(
-          ActionManager.OnPointerOutTrigger,
-          (evt) => {
-            this.cursor.g.setEnabled(false);
-            this.bAddAgent = false;
-          }
-      )
-    );
-
-    plane.actionManager.registerAction(
-      new ExecuteCodeAction(
-          ActionManager.OnPickDownTrigger,
-          (evt) => {
-            if (evt.sourceEvent?.button === 0) {
-              this.bAddAgent = true;
-            }
-            if (evt.sourceEvent?.button === 1) {
-              this.face.wipeAgents();
-            }
-          }
-      )
-    );
-
-    plane.actionManager.registerAction(
-      new ExecuteCodeAction(
-          ActionManager.OnPickUpTrigger,
-          (evt) => {
-            this.bAddAgent = false;
-          }
-      )
-    );
 
     this.face = new Face(
       Vector.ZERO.clone(),
@@ -182,24 +123,15 @@ export class StageFace {
       this.MAX_AGENTS,
       true);
 
-    this.face.outOfBounds = (p: Vector): boolean => {
-      const q = new Vector3(p.x, 0, p.y);
-      return plane.getBoundingInfo().intersectsPoint(q) === false;
-    }
-
-    const cellRadius = this.face.csp.rect;
-
-    DiagnosticFactory.createCellSpaceDiagnostic(
-      this.face,
-      this.scene,
-      plane);
+    // Our built-in 'ground' shape.
+    this.plane = this.createGround(w, h);
 
     // WALLS
     this.face.addWall(
       ...createInwardRectWalls(this.face.rect, this.face.position));
 
-    this.face.walls.forEach(wall => {
-      return DiagnosticFactory.createWallDiagnostic(wall, this.scene);
+    this.face.walls.forEach((wall, idx) => {
+      return DiagnosticFactory.createWallDiagnostic(wall, idx, this.scene);
     });
 
     // this.stage.addChild(...this.face.walls.map(wall => {
@@ -227,14 +159,7 @@ export class StageFace {
 
       const radius = this.RADIUS;
 
-      // const ad = this.stage.addChild(new PIXI.Container());
-      // ad.addChild(DiagnosticFactory.createArrowDiagnostic(radius));
-      
-      // ad.visible = false;
-
       //a.sprotate = false;
-
-      //const m = MeshBuilder.CreateSphere("sphere", sphereOptions, this.scene);
 
       const m: LinesMesh = this.scene.getMeshByID("arrow") as LinesMesh;
       if (m) {
@@ -247,7 +172,7 @@ export class StageFace {
         return;
       }
 
-      a.steering.viewDistance = Math.max(cellRadius.x, cellRadius.y);
+      a.steering.viewDistance = 200; // Math.max(this.face.csp.rect.x,this.face.csp.rect.y); 
       a.steering.cellSpaceEnabled = true;
 
       // a.g.addChild(
@@ -413,9 +338,6 @@ export class StageFace {
 
     this.addDiagnostics();
 
-    // this.cursor.g = new PIXI.Graphics();
-    // this.scene.addChild(this.cursor.g);
-
     this.face.addObstacle(this.cursor);
 
     // const txt = new PIXI.Text(
@@ -423,6 +345,89 @@ export class StageFace {
     //   DiagnosticFactory.createTextStyle(18));
     // txt.anchor.set(1);
     // this.stage.addChild(txt);
+  }
+
+  createGround(
+    w: number,
+    h: number): Mesh {
+
+    const plane = MeshBuilder.CreateGround(
+      "ground",
+      {
+        width: w,
+        height: h,
+        subdivisionsX: this.face.csp.cellsX,
+        subdivisionsY: this.face.csp.cellsY,
+        updatable: true
+      }, 
+      this.scene);
+    plane.position.x = w * 0.5;
+    plane.position.z = h * 0.5;
+
+    plane.actionManager = new ActionManager(this.scene);
+
+    plane.actionManager.registerAction(
+      new ExecuteCodeAction(
+          ActionManager.OnPointerOverTrigger,
+          (evt) => {
+            this.cursor.g.setEnabled(true);
+            this.bAddAgent = false;
+          }
+      )
+    );
+
+    plane.actionManager.registerAction(
+      new ExecuteCodeAction(
+          ActionManager.OnPointerOutTrigger,
+          (evt) => {
+            this.cursor.g.setEnabled(false);
+            this.bAddAgent = false;
+          }
+      )
+    );
+
+    plane.actionManager.registerAction(
+      new ExecuteCodeAction(
+          ActionManager.OnPickDownTrigger,
+          (evt) => {
+            if (evt.sourceEvent?.button === 0) {
+              this.bAddAgent = true;
+            }
+            if (evt.sourceEvent?.button === 1) {
+              this.face.wipeAgents();
+            }
+          }
+      )
+    );
+
+    plane.actionManager.registerAction(
+      new ExecuteCodeAction(
+          ActionManager.OnPickUpTrigger,
+          (evt) => {
+            this.bAddAgent = false;
+          }
+      )
+    );
+
+    this.face.outOfBounds = (p: Vector): boolean => {
+      const q = new Vector3(p.x, 0, p.y);
+      return plane.getBoundingInfo().intersectsPoint(q) === false;
+    }
+
+    DiagnosticFactory.createCellSpaceDiagnostic(
+      this.face,
+      this.scene,
+      plane);
+
+    return plane;
+  }
+
+  addObstacle(
+    radius: number = this.face.csp.cellHypotenuse * 0.5,
+    position: Vector = Vector.randInRect(this.face.rect, radius)): Obstacle {
+    const po = new Obstacle(radius, position);
+    this.face.addObstacle(po);
+    return po;
   }
 
   // Listen for animate update
@@ -456,14 +461,5 @@ export class StageFace {
   get sleepingAgents(): Agent[] {
     return this.face.facets.filter(
       a => a.fsm.currentState instanceof Asleep);
-  }
-
-  addObstacle(
-    radius: number = this.face.csp.cellHypotenuse * 0.5,
-    position: Vector = Vector.randInRect(this.face.rect, radius)): Obstacle {
-    const po = new Obstacle(radius, position);
-    this.face.addObstacle(po);
-    // this.scene.addChild(DiagnosticFactory.createObstacleDiagnostic(po));
-    return po;
   }
 }

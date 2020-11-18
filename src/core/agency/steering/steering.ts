@@ -42,7 +42,7 @@ export default class Steering {
   steeringForce: Vector = Vector.ZERO;
 
   viewDistance = 0;
-  cellSpaceEnabled = false;
+  cellSpaceEnabled = true;
 
   constructor(
     public owner: any,

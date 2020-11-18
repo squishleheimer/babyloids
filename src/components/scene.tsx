@@ -13,7 +13,7 @@ import BabylonScene from 'babylonjs-hook';
 import './scene.css';
 import DiagnosticFactory from '../core/diagnostic-factory';
 import Cursor from '../core/cursor';
-import { PointerEventTypes } from '@babylonjs/core';
+import { ArcRotateCamera, PointerEventTypes } from '@babylonjs/core';
 
 let babylonLink;
 
@@ -25,15 +25,19 @@ const onSceneReady = scene => {
   const h = 500;
 
   // This creates and positions a free camera (non-mesh)
-  var camera = new FreeCamera("camera1", new Vector3(250, 250, -250), scene);
-
-  // This targets the camera to scene origin
-  camera.setTarget(new Vector3(250, 0, 250));
-
-  const canvas = scene.getEngine().getRenderingCanvas();
+  //var camera = new FreeCamera("camera1", new Vector3(w/2.0, 250, -h/2.0), scene);
+  var camera = new ArcRotateCamera(
+    "Camera", 
+    -Math.PI/2, 
+    Math.PI / 3, 
+    25, 
+    Vector3.Zero(), 
+    scene);
 
   // This attaches the camera to the canvas
-  camera.attachControl(canvas, true);
+  camera.attachControl(
+    scene.getEngine().getRenderingCanvas(), 
+    true);
 
   // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
   var light = new HemisphericLight("light", new Vector3(0, 1, 0), scene);
@@ -42,6 +46,10 @@ const onSceneReady = scene => {
   light.intensity = 0.7;
 
   stageFace = new StageFace(scene, w, h);
+
+  // This targets the camera to scene origin
+  camera.setTarget(new Vector3(w/2.0, 0, h/2.0));
+  //camera.setTarget(stageFace.plane);
 }
 
 const onRender = scene => {

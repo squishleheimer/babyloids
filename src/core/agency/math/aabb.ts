@@ -92,8 +92,8 @@ export class AABBInverted {
   get bottom(): number { return this._bottomRight.y; }
   get right(): number { return this._bottomRight.x; }
 
-  get width(): number { return (this.right - this.left); }
-  get height(): number { return (this.top - this.bottom); }
+  get width(): number { return Math.abs(this.right - this.left); }
+  get height(): number { return Math.abs(this.top - this.bottom); }
 
   get corners(): Vector[] {
     return [

@@ -11,7 +11,7 @@ import { NavGraph } from './agency/math/graph/handy-graph-functions';
 import { BehaviourType } from './agency/steering/steering';
 import FollowPath from './agency/steering/follow-path';
 import { NodeIterator } from './agency/math/graph/sparse-graph';
-import { Color3, Color4, DynamicTexture, LinesMesh, Mesh, MeshBuilder, Scene, StandardMaterial, Vector3 } from '@babylonjs/core';
+import { Color3, Color4, DynamicTexture, LinesMesh, Mesh, MeshBuilder, Scene, StandardMaterial, Texture, Vector3 } from '@babylonjs/core';
 import Vector from './agency/math/vector';
 import Face from './agency/face';
 
@@ -72,23 +72,27 @@ export default class DiagnosticFactory {
   static createCellSpaceDiagnostic(
     face: Face,
     scene: Scene,
-    surface: Mesh): Mesh[] {
+    surface: Mesh,
+    {
+      textColor = "white",
+      bgColor = "gray",
+    } = {}): Mesh[] {
 
-    const surfaceTexture = new DynamicTexture(
-      "cell_space",
-      {
-        width: 1024,
-        height: 1024
-      },
-      scene,
-      true,
-      undefined,
-      undefined,
-      false);
+    //surface.setEnabled(false);
 
-    const surfaceMaterial = new StandardMaterial("Mat", scene);
-    surfaceMaterial.diffuseTexture = surfaceTexture;
-    surface.material = surfaceMaterial;
+    // const surfaceTexture = new DynamicTexture(
+    //   "cell_space",
+    //   {
+    //     width: 64,
+    //     height: 64
+    //   },
+    //   scene,
+    //   true,
+    //   Texture.TRILINEAR_SAMPLINGMODE);
+
+    // const surfaceMaterial = new StandardMaterial("Mat", scene);
+    // surfaceMaterial.diffuseTexture = surfaceTexture;
+    //surface.material = surfaceMaterial;
 
     const surfaceWidth = 
       surface.getBoundingInfo().boundingBox.maximum.x - 
@@ -97,38 +101,78 @@ export default class DiagnosticFactory {
       surface.getBoundingInfo().boundingBox.maximum.z - 
       surface.getBoundingInfo().boundingBox.minimum.z;
 
-    const xScale = surfaceTexture.getSize().width / surfaceWidth;
-    const yScale = surfaceTexture.getSize().height / surfaceHeight;
+    const mat = new StandardMaterial(
+      `cell_mat`, 
+      scene);
+
+    mat.diffuseColor = new Color3(1, 0, 1);
+    mat.specularColor = new Color3(0.5, 0.6, 0.87);
+    mat.emissiveColor = new Color3(1, 1, 1);
+    mat.ambientColor = new Color3(0.23, 0.98, 0.53);
+    mat.alpha = 0.0;
+
+    surface.material = mat;
 
     const meshes = face.csp.cells.map((cell, idx) => {
+      
+      const mesh = MeshBuilder.CreateGround(
+        `cell_${idx}`,
+        {
+          width: Math.abs(cell.BBox.width),
+          height: Math.abs(cell.BBox.height),
+          updatable: true
+        }, scene);
+      
+      // const mesh = DiagnosticFactory.createCellDiagnostic(
+      //   cell, idx, surface, face.position);
 
-      surfaceTexture.drawText(
-        `${idx}:0`,
-        (cell.BBox.centre.x - cell.BBox.width * 0.5) * xScale,
-        (cell.BBox.centre.y - cell.BBox.height * 0.5) * yScale,
-        "bold 24px monospace",
-        "white",
-        null,
-        true,
-        false);
-
-      const mesh = DiagnosticFactory.createCellDiagnostic(
+      DiagnosticFactory.createCellDiagnostic(
         cell, idx, surface, face.position);
 
-      // mesh.onBeforeDraw()
+      mesh.position.x = cell.BBox.centre.x;
+      mesh.position.z = cell.BBox.centre.y;
 
-      // if (!this.face.outOfBounds(p)) {
-      //   this.cursor.updatePosition(this.cursor.position, p);
-      //   const idx = this.face.csp.positionToIndex(p);
-      //   console.log(`${idx}:${this.face.csp.cells[idx].members.length}`);
-      //   //txt.position.set(p.x, p.y);
-      //   //txt.text = `${idx}:${this.face.csp.cells[idx].members.length}`;
-      // }
-      
+      const cellMaterial = new StandardMaterial(
+        `cell_mat_${idx}`, 
+        scene);
+
+      cellMaterial.diffuseColor = new Color3(1, 0, 1);
+      cellMaterial.specularColor = new Color3(0.5, 0.6, 0.87);
+      cellMaterial.emissiveColor = new Color3(1, 1, 1);
+      cellMaterial.ambientColor = new Color3(0.23, 0.98, 0.53);
+
+      const cellTexture = new DynamicTexture(
+        `cell_tex_${idx}`,
+        {
+          width: 512,
+          height: 512
+        },
+        scene,
+        true);
+
+      cellMaterial.diffuseTexture = cellTexture;
+
+      mesh.material = cellMaterial;
+
+      const draw = () => {
+        const text = `${idx}:${face.csp.cells[idx].members.length}`;
+        cellTexture.drawText(
+          text,
+          0,//(cell.BBox.centre.x - cell.BBox.width * 0.5),
+          cell.BBox.height,//((surfaceHeight - cell.BBox.centre.y) - cell.BBox.height * 0.5) * yScale,
+          "bold 24px monospace",
+          textColor,
+          bgColor,//idx === 0 ? bgColor : null,
+          true,
+          true);
+      };
+
+      mesh.onBeforeRenderObservable.add(draw);
+
       return mesh;
     });
 
-    surfaceTexture.update();
+    //surfaceTexture.update();
 
     return meshes;
   }
@@ -152,24 +196,24 @@ export default class DiagnosticFactory {
 
   static createWallDiagnostic(
     w: Wall,
+    idx: number,
     scene: Scene,
     normalLength: number = 10): Mesh {
+    
     const c = w.centre();
     const d = c.add(w.N.mult(normalLength));
 
-    const lines = [
-      [new Vector3(w.A.x, 0, w.A.y),
-      new Vector3(w.B.x, 0, w.A.y)
-      ],
-      [new Vector3(c.x, 0, c.y),
-      new Vector3(d.x, 0, d.y)
-      ]
-    ];
-
     return MeshBuilder.CreateLineSystem(
-      `wall_${w}`,
+      `wall_${idx}`,
       {
-        lines: lines
+        lines: [
+          [new Vector3(w.A.x, 0, w.A.y),
+          new Vector3(w.B.x, 0, w.B.y)
+          ],
+          [new Vector3(c.x, 0, c.y),
+          new Vector3(d.x, 0, d.y)
+          ]
+        ]
       },
       scene);
   }
