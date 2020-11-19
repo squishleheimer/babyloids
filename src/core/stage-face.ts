@@ -1,4 +1,4 @@
-import { Scene, Mesh, TransformNode, Color3, InstancedMesh, AbstractMesh, LinesMesh, Plane, Vector3, Epsilon, ActionManager, ExecuteCodeAction, PointerEventTypes, BoundingBox } from '@babylonjs/core';
+import { Scene, Mesh, TransformNode, Color3, InstancedMesh, AbstractMesh, LinesMesh, Plane, Vector3, Epsilon, ActionManager, ExecuteCodeAction, PointerEventTypes, BoundingBox, StandardMaterial } from '@babylonjs/core';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 
 import Face from './agency/face';
@@ -98,20 +98,14 @@ export class StageFace {
 
     this.scene.onPointerObservable.add((pointerInfo) => {
       if (pointerInfo.pickInfo.hit === true) {
+        const p: Vector = new Vector(
+          pointerInfo.pickInfo.pickedPoint.x,
+          pointerInfo.pickInfo.pickedPoint.z);
+        if (!this.face.outOfBounds(p)) {
+          this.cursor.updatePosition(this.cursor.position, p);
+        }
         switch (pointerInfo.type) {
           case PointerEventTypes.POINTERMOVE:
-            const p: Vector = new Vector(
-              pointerInfo.pickInfo.pickedPoint.x,
-              pointerInfo.pickInfo.pickedPoint.z);
-            this.cursor.updatePosition(
-              this.cursor.position,
-              new Vector(
-                pointerInfo.pickInfo.pickedPoint.x,
-                pointerInfo.pickInfo.pickedPoint.z)
-            );
-            if (!this.face.outOfBounds(p)) {
-              this.cursor.updatePosition(this.cursor.position, p);
-            }
             break;
         }
       }
@@ -133,6 +127,12 @@ export class StageFace {
     this.face.walls.forEach((wall, idx) => {
       return DiagnosticFactory.createWallDiagnostic(wall, idx, this.scene);
     });
+
+    DiagnosticFactory.createCellSpaceDiagnostic(
+      this.face,
+      this.scene).forEach(mesh => {
+        mesh.isPickable = false;
+      });
 
     // this.stage.addChild(...this.face.walls.map(wall => {
     //   return DiagnosticFactory.createWallDiagnostic(wall);
@@ -192,14 +192,14 @@ export class StageFace {
 
       const behaviours = [
         //BehaviourType.ObstacleAvoidance,
-        BehaviourType.WallAvoidance,
-        BehaviourType.Alignment,
-        BehaviourType.Cohesion,
-        BehaviourType.Separation,
-        BehaviourType.Wander,
+        //BehaviourType.WallAvoidance,
+        //BehaviourType.Alignment,
+        //BehaviourType.Cohesion,
+        //BehaviourType.Separation,
+        //BehaviourType.Wander,
         //BehaviourType.FollowPath,
         // BehaviourType.Evade,
-        // BehaviourType.Arrive,
+        BehaviourType.Arrive,
         // BehaviourType.Flee,
         // BehaviourType.Pursuit,
         // BehaviourType.OffsetPursuit,
@@ -211,7 +211,7 @@ export class StageFace {
           type: b,
           agent: a,
           seekDistance: a.steering.viewDistance,
-          position: Vector.ZERO,
+          position: this.cursor.position,
           otherA,
           otherB,
           offset: Vector.randomUnit().mult(a.radius * 3)
@@ -339,12 +339,6 @@ export class StageFace {
     this.addDiagnostics();
 
     this.face.addObstacle(this.cursor);
-
-    // const txt = new PIXI.Text(
-    //   'mxmy',
-    //   DiagnosticFactory.createTextStyle(18));
-    // txt.anchor.set(1);
-    // this.stage.addChild(txt);
   }
 
   createGround(
@@ -357,12 +351,22 @@ export class StageFace {
         width: w,
         height: h,
         subdivisionsX: this.face.csp.cellsX,
-        subdivisionsY: this.face.csp.cellsY,
-        updatable: true
+        subdivisionsY: this.face.csp.cellsY
       }, 
       this.scene);
     plane.position.x = w * 0.5;
     plane.position.z = h * 0.5;
+
+    const mat = new StandardMaterial(
+      `ground_mat`, 
+      this.scene);
+    mat.alpha = 0.0;
+    plane.material = mat;
+
+    // this.face.outOfBounds = (p: Vector): boolean => {
+    //   const q = new Vector3(p.x, 0, p.y);
+    //   return plane.getBoundingInfo().intersectsPoint(q) === false;
+    // }
 
     plane.actionManager = new ActionManager(this.scene);
 
@@ -393,7 +397,7 @@ export class StageFace {
             if (evt.sourceEvent?.button === 0) {
               this.bAddAgent = true;
             }
-            if (evt.sourceEvent?.button === 1) {
+            if (evt.sourceEvent?.button === 2) {
               this.face.wipeAgents();
             }
           }
@@ -408,16 +412,6 @@ export class StageFace {
           }
       )
     );
-
-    this.face.outOfBounds = (p: Vector): boolean => {
-      const q = new Vector3(p.x, 0, p.y);
-      return plane.getBoundingInfo().intersectsPoint(q) === false;
-    }
-
-    DiagnosticFactory.createCellSpaceDiagnostic(
-      this.face,
-      this.scene,
-      plane);
 
     return plane;
   }

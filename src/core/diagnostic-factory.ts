@@ -52,37 +52,35 @@ export default class DiagnosticFactory {
     centre: Vector,
     segments: number = 18,
     {
-      alpha = 0.6
+      alpha = 0.6,
+      heightOffset = 0
     } = {}): Mesh {
 
     const points = createCircleVertices(
       radius,
       centre,
       Math.PI / segments)
-      .map(p => new Vector3(p.x, 0, p.y));
+      .map(p => new Vector3(p.x, heightOffset, p.y));
 
     return MeshBuilder.CreateLines(
       "circle",
       {
         points: points,
-        colors: points.map(_ => Color4.FromColor3(Color3.Black(), alpha))
+        colors: points.map(_ => Color3.Black().toColor4(alpha))
       });
   }
 
   static createCellSpaceDiagnostic(
     face: Face,
     scene: Scene,
-    surface: Mesh,
     {
       textColor = "white",
-      bgColor = "gray",
+      bgColor = "transparent",
+      textureWidth = 512,
+      textureHeight = 512,
+      alpha: materialAlpha = 1.0,
+      heightOffset = 0.1
     } = {}): Mesh[] {
-
-    const mat = new StandardMaterial(
-      `cell_mat`, 
-      scene);
-    mat.alpha = 0.0;
-    surface.material = mat;
 
     const meshes = face.csp.cells.map((cell, idx) => {
       
@@ -94,10 +92,12 @@ export default class DiagnosticFactory {
         }, scene);
 
       DiagnosticFactory.createCellDiagnostic(
-        cell, idx, face.position);
+        cell, idx, face.position)
+        .position.y = heightOffset;
 
       mesh.position.x = cell.BBox.centre.x;
       mesh.position.z = cell.BBox.centre.y;
+      mesh.position.y = heightOffset;
 
       const cellMaterial = new StandardMaterial(
         `cell_mat_${idx}`, 
@@ -107,17 +107,19 @@ export default class DiagnosticFactory {
       cellMaterial.specularColor = new Color3(0.5, 0.6, 0.87);
       cellMaterial.emissiveColor = new Color3(1, 1, 1);
       cellMaterial.ambientColor = new Color3(0.23, 0.98, 0.53);
+      cellMaterial.alpha = materialAlpha;
 
       const cellTexture = new DynamicTexture(
         `cell_tex_${idx}`,
         {
-          width: 512,
-          height: 512
+          width: textureWidth,
+          height: textureHeight
         },
         scene,
         true);
 
       cellMaterial.diffuseTexture = cellTexture;
+      cellMaterial.diffuseTexture.hasAlpha = true;
 
       mesh.material = cellMaterial;
 
@@ -131,10 +133,13 @@ export default class DiagnosticFactory {
 
       //const xScale = cellTexture.getSize().width / cellWidth;
       const yScale = cellTexture.getSize().height / cellHeight;
+      
+      const ctx = cellTexture.getContext();
 
       const draw = () => {
         const count = face.csp.cells[idx].members.length;
         const text = `${idx}:${count}`;
+        ctx.clearRect(0, 0, textureWidth, textureHeight);
         cellTexture.drawText(
           count === 0 ? `${idx}`: text,
           0,
@@ -166,7 +171,7 @@ export default class DiagnosticFactory {
       `cell_${idx}`,
       {
         points: points.map(c => new Vector3(c.x, 0, c.y)),
-        colors: points.map(_ => Color4.FromColor3(Color3.White(), 1.0))
+        colors: points.map(_ => Color3.White().toColor4())
       });
   }
 

@@ -12,6 +12,10 @@
 - <https://playground.babylonjs.com/#FU0ES5>
 - <https://playground.babylonjs.com/#5ZCGRM#2>
 
+#### Transparent
+
+<https://www.babylonjs-playground.com/#TMHF80#10>
+
 ### Sky, Land
 
 - <https://playground.babylonjs.com/#E6OZX#221>
