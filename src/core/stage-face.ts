@@ -1,4 +1,4 @@
-import { Scene, Mesh, TransformNode, Color3, InstancedMesh, AbstractMesh, LinesMesh, Plane, Vector3, Epsilon, ActionManager, ExecuteCodeAction, PointerEventTypes, BoundingBox, StandardMaterial } from '@babylonjs/core';
+import { Scene, Mesh, TransformNode, Color3, InstancedMesh, AbstractMesh, LinesMesh, Plane, Vector3, Epsilon, ActionManager, ExecuteCodeAction, PointerEventTypes, BoundingBox, StandardMaterial, VertexBuffer } from '@babylonjs/core';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 
 import Face from './agency/face';
@@ -147,13 +147,6 @@ export class StageFace {
     // this.stage.addChild(this.nodeDiagnostic.g);
     this.face.graph.isDirty = true;
 
-    // const bg = this.scene.addChild(
-    //   PIXI.Sprite.from('assets/623178_2560x1440.jpg')
-    // );
-    // bg.width = w;
-    // bg.height = h;
-    // bg.alpha = 1.0;
-
     // AGENTS
     this.face.onAdd = (a: Boid) => {
 
@@ -164,9 +157,24 @@ export class StageFace {
       const m: LinesMesh = this.scene.getMeshByID("arrow") as LinesMesh;
       if (m) {
         a.g = m.createInstance("boid_" + this.face.facets.length)
-        a.g.setEnabled(false);
+        //a.g.setEnabled(false);
+        const boidMaterial = new StandardMaterial(
+          `${m.name}_mat`, 
+          this.scene);
+        const color = Color3.Random().toColor4().asArray();
+        //boidMaterial.diffuseColor = Color3.Random();
+        //m.material = boidMaterial;
+        const oldColors = m.getVerticesData(VertexBuffer.ColorKind);
+        const newColors = [];
+        if (oldColors) {
+          for(var p = 0; p < oldColors.length / 4; p++) {
+            newColors.push(color);
+          }
+        }
+        m.setVerticesData(VertexBuffer.ColorKind, newColors);
         a.updateEvent.on(_ => {
           a.g.position.y = 0.1;
+          //m.material.alpha = a.visibility;
         });
       } else {
         return;
@@ -174,12 +182,6 @@ export class StageFace {
 
       a.steering.viewDistance = 200; // Math.max(this.face.csp.rect.x,this.face.csp.rect.y); 
       a.steering.cellSpaceEnabled = true;
-
-      // a.g.addChild(
-      //   new PIXI.Text(
-      //     `${a.id}`,
-      //     DiagnosticFactory.createTextStyle(9))
-      // );
 
       let otherA = this.face.facets[randomIntFromInterval(0, this.face.facets.length - 1)] as Entity;
       let otherB = this.face.facets[randomIntFromInterval(0, this.face.facets.length - 1)] as Entity;
@@ -191,15 +193,15 @@ export class StageFace {
       }
 
       const behaviours = [
-        //BehaviourType.ObstacleAvoidance,
-        //BehaviourType.WallAvoidance,
-        //BehaviourType.Alignment,
-        //BehaviourType.Cohesion,
-        //BehaviourType.Separation,
-        //BehaviourType.Wander,
-        //BehaviourType.FollowPath,
+        // BehaviourType.ObstacleAvoidance,
+        BehaviourType.WallAvoidance,
+        BehaviourType.Alignment,
+        BehaviourType.Cohesion,
+        BehaviourType.Separation,
+        BehaviourType.Wander,
+        // BehaviourType.FollowPath,
         // BehaviourType.Evade,
-        BehaviourType.Arrive,
+        // BehaviourType.Arrive,
         // BehaviourType.Flee,
         // BehaviourType.Pursuit,
         // BehaviourType.OffsetPursuit,

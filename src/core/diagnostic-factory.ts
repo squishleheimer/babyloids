@@ -30,7 +30,7 @@ export default class DiagnosticFactory {
     radius: number,
     xRatio: number = 0.75,    
     {
-      alpha = 1.0
+      alpha = 0.4
     } = {},
     colour: Color4 = Color4.FromColor3(Color3.White(), alpha)): LinesMesh {
 
@@ -99,16 +99,6 @@ export default class DiagnosticFactory {
       mesh.position.z = cell.BBox.centre.y;
       mesh.position.y = heightOffset;
 
-      const cellMaterial = new StandardMaterial(
-        `cell_mat_${idx}`, 
-        scene);
-
-      cellMaterial.diffuseColor = new Color3(1, 0, 1);
-      cellMaterial.specularColor = new Color3(0.5, 0.6, 0.87);
-      cellMaterial.emissiveColor = new Color3(1, 1, 1);
-      cellMaterial.ambientColor = new Color3(0.23, 0.98, 0.53);
-      cellMaterial.alpha = materialAlpha;
-
       const cellTexture = new DynamicTexture(
         `cell_tex_${idx}`,
         {
@@ -118,8 +108,13 @@ export default class DiagnosticFactory {
         scene,
         true);
 
+      const cellMaterial = new StandardMaterial(
+        `cell_mat_${idx}`, 
+        scene);
+      
       cellMaterial.diffuseTexture = cellTexture;
       cellMaterial.diffuseTexture.hasAlpha = true;
+      cellMaterial.alpha = materialAlpha;
 
       mesh.material = cellMaterial;
 
