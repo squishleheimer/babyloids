@@ -1,4 +1,4 @@
-import { Scene, Mesh, TransformNode, Color3, InstancedMesh, AbstractMesh, LinesMesh, Plane, Vector3, Epsilon, ActionManager, ExecuteCodeAction, PointerEventTypes, BoundingBox, StandardMaterial, VertexBuffer } from '@babylonjs/core';
+import { Scene, Mesh, TransformNode, Color3, InstancedMesh, AbstractMesh, LinesMesh, Plane, Vector3, Epsilon, ActionManager, ExecuteCodeAction, PointerEventTypes, BoundingBox, StandardMaterial, VertexBuffer, BoxBuilder, KeyboardInfo, PointerInfo } from '@babylonjs/core';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 
 import Face from './agency/face';
@@ -7,7 +7,7 @@ import Boid from './boid';
 import Vector from './agency/math/vector';
 import { BehaviourType } from './agency/steering/steering';
 import { Waking, DozingOff, Asleep, Reset, Awake } from './states';
-import { randInRange, randomIntFromInterval } from './agency/math/random';
+import { clamp, randInRange, randomIntFromInterval } from './agency/math/random';
 import Obstacle from './obstacle';
 import Cursor from './cursor';
 import { createInwardRectWalls } from './agency/steering/wall';
@@ -29,6 +29,7 @@ export class StageFace {
   nodeDiagnostic: any = null;
   bAddAgent = false;
   timePassed = 0;
+  timeFactor: number = 1.0;
 
   constructor(
     public scene: Scene,
@@ -88,24 +89,69 @@ export class StageFace {
     w: number,
     h: number): void {
 
-    const arrow = DiagnosticFactory.createArrowDiagnostic(this.RADIUS);
-    arrow.isVisible = false;
+    const arrow = BoxBuilder.CreateBox("arrow", {size: this.RADIUS});
+    //const arrow = DiagnosticFactory.createArrowDiagnostic(this.RADIUS);
+    let instanceCount = this.MAX_AGENTS;
+    let colorData = new Float32Array(4 * instanceCount);
+    for (var index = 0; index < instanceCount; index++) {
+        colorData[index * 4] = Math.random();
+        colorData[index * 4 + 1] = Math.random();
+        colorData[index * 4 + 2] = Math.random();
+        colorData[index * 4 + 3] = 1.0;
+    }
+    var buffer = new VertexBuffer(
+      this.scene.getEngine(), 
+      colorData, 
+      VertexBuffer.ColorKind, 
+      false, 
+      false, 
+      4, 
+      true);
+
+    arrow.setVerticesBuffer(buffer);
+    arrow.material = new StandardMaterial("arrow_mat", this.scene);
+    arrow.registerInstancedBuffer("color", 4); // 4 is the stride size eg. 4 floats here
+    arrow.instancedBuffers.color = Color3.Random().toColor4();
+    //arrow.isVisible = false;
 
     this.cursor.g = DiagnosticFactory.createCircleDiagnostic(
       this.cursor.radius,
       this.cursor.position
     );
 
-    this.scene.onPointerObservable.add((pointerInfo) => {
-      if (pointerInfo.pickInfo.hit === true) {
+    this.scene.onKeyboardObservable.add((key) => {
+      const DISP = 0.02;
+      let factor: number = this.timeFactor;
+
+      if (key.event.key === 's') {
+        factor = 0;
+      }
+      if (key.event.key === 'f') {
+        factor = 1.0;
+      }
+      if (key.event.key === 'a') {
+        factor = this.timeFactor - DISP;
+      }
+      if (key.event.key === 'd') {
+        factor = this.timeFactor + DISP;        
+      }
+      this.timeFactor = factor;// clamp(factor, 0, 5.0, false);
+    });
+
+    this.scene.onPointerObservable.add((pointer) => {
+      if (pointer.pickInfo.hit === true) {
         const p: Vector = new Vector(
-          pointerInfo.pickInfo.pickedPoint.x,
-          pointerInfo.pickInfo.pickedPoint.z);
+          pointer.pickInfo.pickedPoint.x,
+          pointer.pickInfo.pickedPoint.z);
         if (!this.face.outOfBounds(p)) {
           this.cursor.updatePosition(this.cursor.position, p);
         }
-        switch (pointerInfo.type) {
+        switch (pointer.type) {
           case PointerEventTypes.POINTERMOVE:
+            break;
+          case PointerEventTypes.POINTERWHEEL:
+            // const wheelEvent = pointer.event as WheelEvent;
+            // wheelEvent.deltaY;
             break;
         }
       }
@@ -156,22 +202,10 @@ export class StageFace {
 
       const m: LinesMesh = this.scene.getMeshByID("arrow") as LinesMesh;
       if (m) {
-        a.g = m.createInstance("boid_" + this.face.facets.length)
+        let instance = m.createInstance("boid_" + this.face.facets.length)
         //a.g.setEnabled(false);
-        const boidMaterial = new StandardMaterial(
-          `${m.name}_mat`, 
-          this.scene);
-        const color = Color3.Random().toColor4().asArray();
-        //boidMaterial.diffuseColor = Color3.Random();
-        //m.material = boidMaterial;
-        const oldColors = m.getVerticesData(VertexBuffer.ColorKind);
-        const newColors = [];
-        if (oldColors) {
-          for(var p = 0; p < oldColors.length / 4; p++) {
-            newColors.push(color);
-          }
-        }
-        m.setVerticesData(VertexBuffer.ColorKind, newColors);
+        instance.instancedBuffers.color = Color3.Random().toColor4();
+        a.g = instance;
         a.updateEvent.on(_ => {
           a.g.position.y = 0.1;
           //m.material.alpha = a.visibility;
@@ -428,8 +462,9 @@ export class StageFace {
 
   // Listen for animate update
   tick(deltaTimeInSeconds: number): void {
-    this.timePassed += deltaTimeInSeconds;
-    this.face.tick(deltaTimeInSeconds);
+    const d = deltaTimeInSeconds * this.timeFactor;
+    this.timePassed += d;
+    this.face.tick(d);
 
     if (this.cursor) {
       this.cursor.updateGraphics();

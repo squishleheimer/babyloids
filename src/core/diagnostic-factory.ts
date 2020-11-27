@@ -37,7 +37,27 @@ export default class DiagnosticFactory {
     const points = isoscelesInscribedInCircle(radius, xRatio)
       .map(p => new Vector3(p.x, 0, p.y));
 
-    points.push(points[0].clone());
+    points.push(points[0]);    
+
+    // points.push(points[0]);
+    // points.push(points[1]);
+    // points.push(apex);
+    // points.push(points[0]);
+
+    points.push(
+      Vector3.FromArray(
+        points[1].add(points[2])
+        .asArray()
+        .map((_,i) => i === 1 ? radius * xRatio : _ / 2.0))
+    );
+    points.push(points[1]);
+    points.push(points[2]);
+    points.push(points[4]);
+
+    // points.push(points[2]);
+    // points.push(points[0]);
+    // points.push(apex);
+    // points.push(points[2]);
 
     return MeshBuilder.CreateLines(
       "arrow",
