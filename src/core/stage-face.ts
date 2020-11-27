@@ -18,7 +18,6 @@ import DiagnosticFactory from './diagnostic-factory';
 export class StageFace {
 
   private readonly MAX_AGENTS = 500;
-  private readonly RADIUS = 0.5;//randomIntFromInterval(1.0, 6.0);
 
   public face: Face;
 
@@ -28,6 +27,8 @@ export class StageFace {
   cursor: Cursor = new Cursor(5.0);
   nodeDiagnostic: any = null;
   bAddAgent = false;
+  private boidRadius = 0.5;//randomIntFromInterval(1.0, 6.0);
+
   timePassed = 0;
   timeFactor: number = 1.0;
 
@@ -50,12 +51,12 @@ export class StageFace {
     // this.scene.addChild(...this.diagnostics);
   }
 
-  addAgent(p: Vector = this.cursor.position.clone()): Agent {
+  addAgent(radius: number = 1.0, p: Vector = Vector.ZERO): Agent {
     if (p &&
       this.face.numberOfFacets() < this.MAX_AGENTS &&
       !this.face.outOfBounds(p)) {
       return this.face.addAgent(
-        new Boid(this.RADIUS, this.face, p));
+        new Boid(radius, this.face, p));
     }
   }
 
@@ -88,31 +89,6 @@ export class StageFace {
   init(
     w: number,
     h: number): void {
-
-    const arrow = BoxBuilder.CreateBox("arrow", {size: this.RADIUS});
-    //const arrow = DiagnosticFactory.createArrowDiagnostic(this.RADIUS);
-    let instanceCount = this.MAX_AGENTS;
-    let colorData = new Float32Array(4 * instanceCount);
-    for (var index = 0; index < instanceCount; index++) {
-        colorData[index * 4] = Math.random();
-        colorData[index * 4 + 1] = Math.random();
-        colorData[index * 4 + 2] = Math.random();
-        colorData[index * 4 + 3] = 1.0;
-    }
-    var buffer = new VertexBuffer(
-      this.scene.getEngine(), 
-      colorData, 
-      VertexBuffer.ColorKind, 
-      false, 
-      false, 
-      4, 
-      true);
-
-    arrow.setVerticesBuffer(buffer);
-    arrow.material = new StandardMaterial("arrow_mat", this.scene);
-    arrow.registerInstancedBuffer("color", 4); // 4 is the stride size eg. 4 floats here
-    arrow.instancedBuffers.color = Color3.Random().toColor4();
-    //arrow.isVisible = false;
 
     this.cursor.g = DiagnosticFactory.createCircleDiagnostic(
       this.cursor.radius,
@@ -194,9 +170,36 @@ export class StageFace {
     this.face.graph.isDirty = true;
 
     // AGENTS
+    const radius = this.boidRadius;
+
+    //const arrow = BoxBuilder.CreateBox("arrow", {size: radius});
+    const arrow = DiagnosticFactory.createArrowDiagnostic(this.scene, this.boidRadius);
+    let instanceCount = this.MAX_AGENTS;
+    let colorData = new Float32Array(4 * instanceCount);
+    for (var index = 0; index < instanceCount; index++) {
+        colorData[index * 4] = Math.random();
+        colorData[index * 4 + 1] = Math.random();
+        colorData[index * 4 + 2] = Math.random();
+        colorData[index * 4 + 3] = 1.0;
+    }
+    var buffer = new VertexBuffer(
+      this.scene.getEngine(), 
+      colorData, 
+      VertexBuffer.ColorKind, 
+      false, 
+      false, 
+      4, 
+      true);
+
+    arrow.setVerticesBuffer(buffer);
+    arrow.material = new StandardMaterial("arrow_mat", this.scene);
+    arrow.registerInstancedBuffer("color", 4); // 4 is the stride size eg. 4 floats here
+    arrow.instancedBuffers.color = Color3.Random().toColor4();
+    //arrow.isVisible = false;
+
     this.face.onAdd = (a: Boid) => {
 
-      const radius = this.RADIUS;
+      
 
       //a.sprotate = false;
 
@@ -480,7 +483,9 @@ export class StageFace {
       this.timePassed = 0;
       this.poke();
       if (this.bAddAgent) {
-        this.addAgent();
+        this.addAgent(
+          this.boidRadius, 
+          this.cursor.position.clone());
       }
     }
 
