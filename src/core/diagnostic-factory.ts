@@ -38,67 +38,34 @@ export default class DiagnosticFactory {
     const points = isoscelesInscribedInCircle(radius, xRatio)
       .map(p => new Vector3(p.x, 0, p.y));
 
-    points.push(points[0]);
+    points.push(
+      Vector3.FromArray(
+        points[1].add(points[2])
+        .asArray()
+        .map((_,i) => i === 1 ? radius * xRatio : _ / 2.0))
+    );
 
-    // points.push(points[0]);
-    // points.push(points[1]);
-    // points.push(apex);
-    // points.push(points[0]);
+    const positions = [];
+    points.forEach((p,i) => points[i].toArray(positions, 0 + i * 3));
+    var indices = [
+      0, 2, 1,
+      0, 1, 3,
+      0, 3, 2,
+      3, 1, 2,
+    ];
 
-    // points.push(
-    //   Vector3.FromArray(
-    //     points[1].add(points[2])
-    //     .asArray()
-    //     .map((_,i) => i === 1 ? radius * xRatio : _ / 2.0))
-    // );
-    // points.push(points[1]);
-    // points.push(points[2]);
-    // points.push(points[4]);
-
-    // points.push(points[2]);
-    // points.push(points[0]);
-    // points.push(apex);
-    // points.push(points[2]);
-
-    const customMesh = new Mesh("arrow", scene);
-    const positions = [
-      points[0].x,
-      points[0].y,
-      points[0].z,
-      points[1].x,
-      points[1].y,
-      points[1].z,
-      points[2].x,
-      points[2].y,
-      points[2].z,
-      points[0].x,
-      points[0].y,
-      points[0].z,
-    ].reverse();
-    //points.map((p, i) => p.toArray(positions, i))
-    //var positions = [-5, 2, -3, -7, -2, -3, -3, -2, -3, 5, 2, 3, 7, -2, 3, 3, -2, 3];
-    var indices = [0, 1, 2, 0];
-    //Empty array to contain calculated values or normals added
     let normals = [];
-    //Calculations of normals added
     VertexData.ComputeNormals(positions, indices, normals);
+
+    const mesh = new Mesh("arrow", scene);
 
     var vertexData = new VertexData();
     vertexData.positions = positions;
     vertexData.indices = indices;
-    vertexData.normals = normals; //Assignment of normal to vertexData added
-    vertexData.applyToMesh(customMesh);
+    vertexData.normals = normals;
+    vertexData.applyToMesh(mesh);
 
-
-
-    return customMesh;
-
-    // return MeshBuilder.CreateLines(
-    //   "arrow",
-    //   {
-    //     points: points,
-    //     colors: points.map(_ => colour)
-    //   });
+    return mesh;
   }
 
   static createCircleDiagnostic(

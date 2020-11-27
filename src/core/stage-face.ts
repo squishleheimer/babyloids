@@ -1,4 +1,4 @@
-import { Scene, Mesh, TransformNode, Color3, InstancedMesh, AbstractMesh, LinesMesh, Plane, Vector3, Epsilon, ActionManager, ExecuteCodeAction, PointerEventTypes, BoundingBox, StandardMaterial, VertexBuffer, BoxBuilder, KeyboardInfo, PointerInfo } from '@babylonjs/core';
+import { Scene, Mesh, TransformNode, Color3, InstancedMesh, AbstractMesh, LinesMesh, Plane, Vector3, Epsilon, ActionManager, ExecuteCodeAction, PointerEventTypes, BoundingBox, StandardMaterial, VertexBuffer, BoxBuilder, KeyboardInfo, PointerInfo, Color4 } from '@babylonjs/core';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 
 import Face from './agency/face';
@@ -28,6 +28,7 @@ export class StageFace {
   nodeDiagnostic: any = null;
   bAddAgent = false;
   private boidRadius = 0.5;//randomIntFromInterval(1.0, 6.0);
+  private boidColor: Color3 = Color3.White();
 
   timePassed = 0;
   timeFactor: number = 1.0;
@@ -172,46 +173,25 @@ export class StageFace {
     // AGENTS
     const radius = this.boidRadius;
 
-    //const arrow = BoxBuilder.CreateBox("arrow", {size: radius});
     const arrow = DiagnosticFactory.createArrowDiagnostic(this.scene, this.boidRadius);
-    let instanceCount = this.MAX_AGENTS;
-    let colorData = new Float32Array(4 * instanceCount);
-    for (var index = 0; index < instanceCount; index++) {
-        colorData[index * 4] = Math.random();
-        colorData[index * 4 + 1] = Math.random();
-        colorData[index * 4 + 2] = Math.random();
-        colorData[index * 4 + 3] = 1.0;
-    }
-    var buffer = new VertexBuffer(
-      this.scene.getEngine(), 
-      colorData, 
-      VertexBuffer.ColorKind, 
-      false, 
-      false, 
-      4, 
-      true);
-
-    arrow.setVerticesBuffer(buffer);
+    
     arrow.material = new StandardMaterial("arrow_mat", this.scene);
     arrow.registerInstancedBuffer("color", 4); // 4 is the stride size eg. 4 floats here
     arrow.instancedBuffers.color = Color3.Random().toColor4();
-    //arrow.isVisible = false;
+    arrow.isVisible = false;
 
     this.face.onAdd = (a: Boid) => {
 
-      
-
       //a.sprotate = false;
 
-      const m: LinesMesh = this.scene.getMeshByID("arrow") as LinesMesh;
+      const m: Mesh = this.scene.getMeshByID("arrow") as LinesMesh;
       if (m) {
         let instance = m.createInstance("boid_" + this.face.facets.length)
-        //a.g.setEnabled(false);
-        instance.instancedBuffers.color = Color3.Random().toColor4();
-        a.g = instance;
+          a.g = instance;
+          instance.instancedBuffers.color = this.boidColor.toColor4();
         a.updateEvent.on(_ => {
           a.g.position.y = 0.1;
-          //m.material.alpha = a.visibility;
+          // m.material.alpha = a.visibility;
         });
       } else {
         return;
@@ -448,6 +428,7 @@ export class StageFace {
           ActionManager.OnPickUpTrigger,
           (evt) => {
             this.bAddAgent = false;
+            this.boidColor = Color3.Random();
           }
       )
     );

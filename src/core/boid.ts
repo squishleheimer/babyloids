@@ -14,7 +14,7 @@ export default class Boid extends Agent {
     radius: number,
     face: Face,
     p: Vector,
-    private rotationOffset = Math.PI*0.5) {
+    private rotationOffset = 0) {
     super(radius, face, p);
     this.resetEvent.on(_ => {
       if (this.g) {
