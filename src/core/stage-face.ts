@@ -92,7 +92,7 @@ export class StageFace {
     h: number): void {
 
     this.cursor.g = DiagnosticFactory.createCircleDiagnostic(
-      this.cursor.radius,
+      1.0, // this.cursor.radius,
       this.cursor.position
     );
 
@@ -127,8 +127,11 @@ export class StageFace {
           case PointerEventTypes.POINTERMOVE:
             break;
           case PointerEventTypes.POINTERWHEEL:
-            // const wheelEvent = pointer.event as WheelEvent;
-            // wheelEvent.deltaY;
+            const wheelEvent = pointer.event as WheelEvent;
+            const delta = wheelEvent.deltaY * 0.005;
+            this.cursor.radius = clamp(
+              this.cursor.radius + delta, 0.1, 250, false);
+            this.boidRadius = this.cursor.radius * 0.1;
             break;
         }
       }
@@ -171,9 +174,7 @@ export class StageFace {
     this.face.graph.isDirty = true;
 
     // AGENTS
-    const radius = this.boidRadius;
-
-    const arrow = DiagnosticFactory.createArrowDiagnostic(this.scene, this.boidRadius);
+    const arrow = DiagnosticFactory.createArrowDiagnostic(this.scene, 1.0);
     
     arrow.material = new StandardMaterial("arrow_mat", this.scene);
     arrow.registerInstancedBuffer("color", 4); // 4 is the stride size eg. 4 floats here
@@ -182,22 +183,19 @@ export class StageFace {
 
     this.face.onAdd = (a: Boid) => {
 
-      //a.sprotate = false;
-
-      const m: Mesh = this.scene.getMeshByID("arrow") as LinesMesh;
+      const m: Mesh = this.scene.getMeshByID("arrow") as Mesh;
       if (m) {
-        let instance = m.createInstance("boid_" + this.face.facets.length)
-          a.g = instance;
-          instance.instancedBuffers.color = this.boidColor.toColor4();
+        let instance = m.createInstance("boid_" + this.face.facets.length);
+        a.g = instance;
+        instance.instancedBuffers.color = this.boidColor.toColor4();
         a.updateEvent.on(_ => {
           a.g.position.y = 0.1;
-          // m.material.alpha = a.visibility;
         });
       } else {
         return;
       }
 
-      a.steering.viewDistance = 200; // Math.max(this.face.csp.rect.x,this.face.csp.rect.y); 
+      a.steering.viewDistance = Math.max(this.face.csp.rect.x, this.face.csp.rect.y) * 0.5;
       a.steering.cellSpaceEnabled = true;
 
       let otherA = this.face.facets[randomIntFromInterval(0, this.face.facets.length - 1)] as Entity;

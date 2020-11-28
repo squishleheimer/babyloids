@@ -33,6 +33,7 @@ export default abstract class Entity {
     // tslint:disable-next-line: variable-name
     protected _side: Vector = Vector.ZERO) { }
 
+  set radius(theRadius: number) { this._radius = theRadius; }
   get radius(): number { return this._radius; }
   get position(): Vector { return this._position; }
   get velocity(): Vector { return this._velocity; }

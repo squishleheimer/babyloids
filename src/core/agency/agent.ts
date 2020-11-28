@@ -3,6 +3,7 @@ import Smoother from './math/smoother';
 import Steering from './steering/steering';
 import IState, { StateMachine } from './state';
 import Entity from './steering/entity';
+import Face from './face';
 
 export class AgentState implements IState<Agent> {
   enter(_: Agent): void { }
@@ -16,7 +17,7 @@ export default abstract class Agent extends Entity {
   maxForce = 5000.0;
   mass = 15.0;
 
-  face: any;
+  face: Face;
 
   origin: Vector;
   direction: Vector = Vector.randomUnit();

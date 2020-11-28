@@ -25,14 +25,14 @@ const onSceneReady = scene => {
   const h = 500;
 
   // This creates and positions a free camera (non-mesh)
-  //var camera = new FreeCamera("camera1", new Vector3(w/2.0, 250, -h/2.0), scene);
-  var camera = new ArcRotateCamera(
-    "Camera", 
-    -Math.PI/2, 
-    Math.PI / 3, 
-    25, 
-    Vector3.Zero(), 
-    scene);
+  var camera = new FreeCamera("camera1", new Vector3(w/2.0, 250, -h/2.0), scene);
+  // var camera = new ArcRotateCamera(
+  //   "Camera", 
+  //   -Math.PI/2, 
+  //   Math.PI / 3, 
+  //   25, 
+  //   Vector3.Zero(), 
+  //   scene);
 
   // This attaches the camera to the canvas
   camera.attachControl(

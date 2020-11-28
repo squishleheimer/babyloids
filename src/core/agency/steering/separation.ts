@@ -15,9 +15,9 @@ export default class Separation extends SteeringBehaviour {
 
   force(): Vector {
     if (this.owner.steering.cellSpaceEnabled) {
-      const idx = this.owner.face.csp.neighbours.indexOf(undefined, 0);
-      return this.calculateForce(
-        this.owner.face.csp.neighbours.slice(0, idx));
+      const idx = this.owner.face.csp.positionToIndex(this.owner.position);
+      const cellmates = this.owner.face.csp.cells[idx].members;
+      return this.calculateForce(cellmates);
     }
     return this.calculateForce(this.owner.face.facets);
   }

@@ -157,7 +157,8 @@ export default class CellSpacePartition {
     const oldIdx: number = this.positionToIndex(oldPos);
     const newIdx: number = this.positionToIndex(newPos || a.position);
 
-    if (newIdx === oldIdx) { return false; }
+    if (newIdx === oldIdx)
+      return false;
 
     // the entity has moved into another cell so delete from current cell
     if (!this.removeMemberFromCell(oldIdx, a)) {
@@ -182,14 +183,9 @@ export default class CellSpacePartition {
   // this method calculates all a target's neighbors and stores them in
   // the neighbor vector. After you have called this method use the begin,
   // next and end methods to iterate through the vector.
-  calculateNeighbours(
+  public calculateNeighbours(
     targetPos: Vector,
     queryRadius: number): void {
-
-      // TODO: investigate where this unused expression is relevant.
-      const _ = new Vector(
-        targetPos.x + this.spaceWidth / 2.0,
-        targetPos.y + this.spaceHeight / 2.0);
 
       // create the query box that is the
       // bounding box of the target's query

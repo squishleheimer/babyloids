@@ -42,6 +42,7 @@ export default class Cursor extends Entity {
     if (this.g) {
       this.g.position.x = this.position.x;
       this.g.position.z = this.position.y;
+      this.g.scaling.set(this.radius, this.radius, this.radius);
       // this.g
       //   .clear()
       //   .lineStyle(1, 0xFFFFFF, 1)
