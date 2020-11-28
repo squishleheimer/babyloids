@@ -9,7 +9,7 @@ export default class Cursor extends Entity {
   g: TransformNode;
 
   public speedFactor = 40;
-  maxSpeed = 200;
+  maxSpeed = 2000;
 
   private smoother = new Smoother();
 
@@ -26,6 +26,12 @@ export default class Cursor extends Entity {
     this.updateEvent.on(gUp);
   }
 
+  public asyncUpdate(newPos: Vector, oldPos: Vector = this.position): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.updatePosition(oldPos, newPos);
+    });
+  }
+  
   public updatePosition(oldPos: Vector, newPos: Vector): void {
     if (newPos) {
       if (oldPos) {
@@ -62,7 +68,7 @@ export default class Cursor extends Entity {
   }
 
   public get enabled(): boolean {
-    return true; // return (this.g) ? this.g.alpha > 0 : false;
+    return this.g.isEnabled(); // return (this.g) ? this.g.alpha > 0 : false;
   }
 
 }

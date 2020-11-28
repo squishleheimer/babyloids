@@ -92,14 +92,18 @@ export class StageFace {
     h: number): void {
 
     this.cursor.g = DiagnosticFactory.createCircleDiagnostic(
-      1.0, // this.cursor.radius,
+      1.0,
       this.cursor.position
     );
 
-    this.scene.onKeyboardObservable.add((key) => {
+    this.scene.onKeyboardObservable.add((key, state) => {
+      // console.log(`code:${key.event.code},ctrl:${key.event.ctrlKey}`);
       const DISP = 0.02;
       let factor: number = this.timeFactor;
 
+      if (key.event.key === 'q') {
+        //this.cursor.g.setEnabled(key.event.ctrlKey);
+      }
       if (key.event.key === 's') {
         factor = 0;
       }
@@ -110,7 +114,7 @@ export class StageFace {
         factor = this.timeFactor - DISP;
       }
       if (key.event.key === 'd') {
-        factor = this.timeFactor + DISP;        
+        factor = this.timeFactor + DISP;
       }
       this.timeFactor = factor;// clamp(factor, 0, 5.0, false);
     });
@@ -121,7 +125,7 @@ export class StageFace {
           pointer.pickInfo.pickedPoint.x,
           pointer.pickInfo.pickedPoint.z);
         if (!this.face.outOfBounds(p)) {
-          this.cursor.updatePosition(this.cursor.position, p);
+          this.cursor.asyncUpdate(p);
         }
         switch (pointer.type) {
           case PointerEventTypes.POINTERMOVE:
@@ -130,7 +134,7 @@ export class StageFace {
             const wheelEvent = pointer.event as WheelEvent;
             const delta = wheelEvent.deltaY * 0.005;
             this.cursor.radius = clamp(
-              this.cursor.radius + delta, 0.1, 250, false);
+              this.cursor.radius + delta, 0.1, 200, false);
             this.boidRadius = this.cursor.radius * 0.1;
             break;
         }
@@ -141,7 +145,10 @@ export class StageFace {
       Vector.ZERO.clone(),
       new Vector(w, h),
       this.MAX_AGENTS,
-      true);
+      {
+        cellSpaceSize: 5,
+        nonPenetrationEnabled: true
+      });
 
     // Our built-in 'ground' shape.
     this.plane = this.createGround(w, h);
@@ -160,13 +167,14 @@ export class StageFace {
         mesh.isPickable = false;
       });
 
-    // this.stage.addChild(...this.face.walls.map(wall => {
-    //   return DiagnosticFactory.createWallDiagnostic(wall);
-    // }));
-
-    // const gd = DiagnosticFactory.createGraphDiagnostic(
-    //   this.face.graph, { });
-    // this.stage.addChild(gd);
+    DiagnosticFactory.createGraphDiagnostic(
+      this.face.graph,
+      this.scene,
+      {
+        node: false,
+        head: false,
+        line: true
+      });
 
     // this.nodeDiagnostic = DiagnosticFactory.createNodeDiagnostic(
     //   this.face.graph, { });
@@ -174,188 +182,197 @@ export class StageFace {
     this.face.graph.isDirty = true;
 
     // AGENTS
-    const arrow = DiagnosticFactory.createArrowDiagnostic(this.scene, 1.0);
-    
-    arrow.material = new StandardMaterial("arrow_mat", this.scene);
-    arrow.registerInstancedBuffer("color", 4); // 4 is the stride size eg. 4 floats here
-    arrow.instancedBuffers.color = Color3.Random().toColor4();
-    arrow.isVisible = false;
+    const boid = DiagnosticFactory.createBoidDiagnostic(
+      this.scene,
+      1.0);
+
+    this.face.addObstacle(this.cursor);
 
     this.face.onAdd = (a: Boid) => {
-
-      const m: Mesh = this.scene.getMeshByID("arrow") as Mesh;
-      if (m) {
-        let instance = m.createInstance("boid_" + this.face.facets.length);
-        a.g = instance;
-        instance.instancedBuffers.color = this.boidColor.toColor4();
-        a.updateEvent.on(_ => {
-          a.g.position.y = 0.1;
-        });
-      } else {
-        return;
-      }
-
-      a.steering.viewDistance = Math.max(this.face.csp.rect.x, this.face.csp.rect.y) * 0.5;
-      a.steering.cellSpaceEnabled = true;
-
-      let otherA = this.face.facets[randomIntFromInterval(0, this.face.facets.length - 1)] as Entity;
-      let otherB = this.face.facets[randomIntFromInterval(0, this.face.facets.length - 1)] as Entity;
-      if (otherA === a) {
-        otherA = null;
-      }
-      if (otherB === a) {
-        otherB = null;
-      }
-
-      const behaviours = [
-        // BehaviourType.ObstacleAvoidance,
-        BehaviourType.WallAvoidance,
-        BehaviourType.Alignment,
-        BehaviourType.Cohesion,
-        BehaviourType.Separation,
-        BehaviourType.Wander,
-        // BehaviourType.FollowPath,
-        // BehaviourType.Evade,
-        // BehaviourType.Arrive,
-        // BehaviourType.Flee,
-        // BehaviourType.Pursuit,
-        // BehaviourType.OffsetPursuit,
-        // BehaviourType.Evade,
-        // BehaviourType.Hide
-        // BehaviourType.Interpose
-      ].map(b => {
-        return SteeringFactory.createSteeringBehaviour({
-          type: b,
-          agent: a,
-          seekDistance: a.steering.viewDistance,
-          position: this.cursor.position,
-          otherA,
-          otherB,
-          offset: Vector.randomUnit().mult(a.radius * 3)
-        });
+      this.addAsync(a).then(_ => {
+        console.log(`added:${a.id}`);
       });
-
-      // if (this.face.facets.length === 3) {
-      //   a.steering.addBehaviour(true,
-      //     new Interpose(a,
-      //       this.face.facets[0],
-      //       this.face.facets[1]));
-      //   a.g.tint = 0x0000FF;
-      // }
-
-      a.steering.addBehaviour(true, ...behaviours);
-
-      // const wd = DiagnosticFactory.createWanderDiagnostic(a,
-      //   a.steering.getBehaviourByType(BehaviourType.Wander) as Wander);
-      // this.stage.addChild(wd.g);
-      // const oad = DiagnosticFactory.createObstacleAvoidanceDiagnostic(a,
-      //   a.steering.getBehaviourByType(BehaviourType.ObstacleAvoidance) as ObstacleAvoidance);
-      // this.stage.addChild(oad.g);
-      // const wad = DiagnosticFactory.createWallAvoidanceDiagnostic(a,
-      //   a.steering.getBehaviourByType(BehaviourType.WallAvoidance) as WallAvoidance);
-      // this.stage.addChild(wad.g);
-
-      // let pp: PIXI.Graphics = null;
-
-      this.face.getRandomPathAsync(
-        this.cursor.position ?
-        this.cursor.position.clone() :
-        null)
-        .then(out => {
-          if (out.path) {
-            a.steering.path = out.path;
-            // pp = DiagnosticFactory.createPathDiagnostic(
-            //   a.steering.path);
-            // this.scene.addChild(pp);
-          }
-        });
-
-      // const fpd = DiagnosticFactory.createFollowPathDiagnostic(a);
-      // if (fpd) {
-      //   this.stage.addChild(fpd.g);
-      // }
-
-      // ad.addChild(
-      //   new PIXI.Graphics()
-      //   .lineStyle(2, 0x000000, 0.1)
-      //   .drawCircle(0, 0, a.steering.viewDistance)
-      // );
-
-      // a.updateEvent.on((_: Agent) => {
-      //   ad.rotation = a.heading.angle;
-      //   ad.position.set(a.position.x, a.position.y);
-      //   // wd.updateGraphics();
-      //   // oad.updateGraphics();
-      //   // wad.updateGraphics();
-      //   if (fpd) {
-      //     fpd.updateGraphics();
-      //   }
-      //   // if (a.steering.path && a.steering.path.points.length > 0) {
-      //   //   a.steering.path.points.forEach(p => {
-      //   //     if (this.cursor.position.sub(p).getLengthSq() < this.cursor.radius ** 2) {
-      //   //       const i = this.face.pathFinder.getClosestNodeToPos(p);
-      //   //       const n = this.face.graph.getNode(i);
-      //   //       if (n) {
-      //   //         n.setOccupied(true);
-      //   //         this.face.graph.isDirty = true;
-      //   //       }
-      //   //     }
-      //   //   });
-      //   // }
-      // });
-
-      a.removeEvent.on((_: Agent) => {
-        this.scene.removeMesh(a.g as Mesh);
-        // this.stage.removeChild(ad);
-        // if (pp) {
-        //   this.stage.removeChild(pp);
-        // }
-        // if (fpd) {
-        //   this.stage.removeChild(fpd);
-        // }
-        // this.stage.removeChild(wd.g);
-        // this.stage.removeChild(oad.g);
-        // this.stage.removeChild(wad.g);
-      });
-
-      a.resetEvent.on((_: Agent) => {
-        // if (pp) {
-        //   a.steering.path.clear();
-        //   pp.clear();
-        //   this.scene.removeChild(pp);
-        //   this.face.getRandomPathAsync(
-        //     _.position
-        //   ).then(out => {
-        //     if (out.path) {
-        //       a.steering.path = out.path;
-        //       // pp = DiagnosticFactory.createPathDiagnostic(
-        //       //   a.steering.path);
-        //       // this.stage.addChild(pp);
-        //       // console.log(`${out.i0}=>${out.i1}$${out.cost.toFixed(2)}`);
-        //     }
-        //   });
-        // }
-      });
-
-      // a.g.on('mousemove', (evt: PIXI.InteractionEvent) => {
-      // });
-
-      // a.g.on('mouseover', (evt: PIXI.InteractionEvent) => {
-      //   // a.g.tint = 0xFF0000;
-      // });
-
-      // a.g.on('mouseout', (evt: PIXI.InteractionEvent) => {
-      //   // a.g.tint = 0x00FF00;
-      // });
-
-      a.fsm.transitionTo(new Asleep());
-
-      this.poke();
     };
 
     this.addDiagnostics();
+  }
 
-    this.face.addObstacle(this.cursor);
+  private async addAsync(a: Boid): Promise<void> {
+    return this.addBoid(a);
+  }
+
+  private addBehaviours(a: Boid, behaviours: BehaviourType[]): void {
+    const otherA = this.face.getRandomOther(a);
+    const otherB = this.face.getRandomOther(a);
+    a.steering.addBehaviour(true, ...behaviours.map(b => {
+      return SteeringFactory.createSteeringBehaviour({
+        type: b,
+        agent: a,
+        seekDistance: a.steering.viewDistance,
+        position: this.cursor.position,
+        otherA,
+        otherB,
+        offset: Vector.randomUnit().mult(a.radius * 3)
+      });
+    }));
+  }
+
+  private addBoid(a: Boid): void {
+    const m: Mesh = this.scene.getMeshByID("boid") as Mesh;
+    if (m) {
+      const instance = m.createInstance(`boid_${this.face.facets.length}`);
+      instance.instancedBuffers.color = this.boidColor.toColor4();
+      a.g = instance;
+      a.updateEvent.on(_ => {
+        a.g.position.y = 0.1;
+      });
+    } else {
+      return;
+    }
+
+    a.steering.viewDistance = Math.max(this.face.csp.rect.x, this.face.csp.rect.y) * 0.5;
+    a.steering.cellSpaceEnabled = true;
+
+    const others = [
+      // BehaviourType.ObstacleAvoidance,
+      // BehaviourType.WallAvoidance,
+      // BehaviourType.Alignment,
+      // BehaviourType.Cohesion,
+      // BehaviourType.Separation,
+      // BehaviourType.Wander,
+      // BehaviourType.FollowPath,
+      // BehaviourType.Evade,
+      // BehaviourType.Arrive,
+      // BehaviourType.Flee,
+      // BehaviourType.Pursuit,
+      // BehaviourType.OffsetPursuit,
+      // BehaviourType.Evade,
+      // BehaviourType.Hide
+      // BehaviourType.Interpose
+    ]
+    
+    const followers = [
+      BehaviourType.FollowPath,
+    ];
+
+    const flockers = [
+      BehaviourType.WallAvoidance,
+      BehaviourType.Alignment,
+      BehaviourType.Cohesion,
+      BehaviourType.Separation,
+      BehaviourType.Wander,
+    ]
+
+    this.addBehaviours(a, a.id % 2 === 0 ? flockers : followers);
+
+    // if (this.face.facets.length === 3) {
+    //   a.steering.addBehaviour(true,
+    //     new Interpose(a,
+    //       this.face.facets[0],
+    //       this.face.facets[1]));
+    //   a.g.tint = 0x0000FF;
+    // }
+
+    // const wd = DiagnosticFactory.createWanderDiagnostic(a,
+    //   a.steering.getBehaviourByType(BehaviourType.Wander) as Wander);
+    // this.stage.addChild(wd.g);
+    // const oad = DiagnosticFactory.createObstacleAvoidanceDiagnostic(a,
+    //   a.steering.getBehaviourByType(BehaviourType.ObstacleAvoidance) as ObstacleAvoidance);
+    // this.stage.addChild(oad.g);
+    // const wad = DiagnosticFactory.createWallAvoidanceDiagnostic(a,
+    //   a.steering.getBehaviourByType(BehaviourType.WallAvoidance) as WallAvoidance);
+    // this.stage.addChild(wad.g);
+
+    // let pp: PIXI.Graphics = null;
+
+    this.face.getRandomPathAsync(
+      this.cursor.position ?
+        this.cursor.position.clone() :
+        null)
+      .then(out => {
+        if (out.path) {
+          a.steering.path = out.path;
+          // pp = DiagnosticFactory.createPathDiagnostic(
+          //   a.steering.path);
+          // this.scene.addChild(pp);
+        }
+      });
+
+    // const fpd = DiagnosticFactory.createFollowPathDiagnostic(a);
+    // if (fpd) {
+    //   this.stage.addChild(fpd.g);
+    // }
+
+    // ad.addChild(
+    //   new PIXI.Graphics()
+    //   .lineStyle(2, 0x000000, 0.1)
+    //   .drawCircle(0, 0, a.steering.viewDistance)
+    // );
+
+    a.updateEvent.on((_: Agent) => {
+      // wd.updateGraphics();
+      // oad.updateGraphics();
+      // wad.updateGraphics();
+      // if (fpd) {
+      //   fpd.updateGraphics();
+      // }
+      if (a.steering.path && a.steering.path.points.length > 0) {
+        a.steering.path.points.forEach(p => {
+          if (this.cursor.position.sub(p).getLengthSq() < this.cursor.radius ** 2) {
+            const i = this.face.pathFinder.getClosestNodeToPos(p);
+            const n = this.face.graph.getNode(i);
+            if (n) {
+              n.setOccupied(true);
+              this.face.graph.isDirty = true;
+            }
+          }
+        });
+      }
+    });
+
+    a.removeEvent.on((_: Agent) => {
+      this.scene.removeMesh(a.g as Mesh);
+      // this.stage.removeChild(ad);
+      // if (pp) {
+      //   this.stage.removeChild(pp);
+      // }
+      // if (fpd) {
+      //   this.stage.removeChild(fpd);
+      // }
+      // this.stage.removeChild(wd.g);
+      // this.stage.removeChild(oad.g);
+      // this.stage.removeChild(wad.g);
+    });
+
+    a.resetEvent.on((_: Agent) => {
+      a.steering.path.clear();
+      this.face.getRandomPathAsync(
+        _.position
+      ).then(out => {
+        if (out.path) {
+          a.steering.path = out.path;
+          // pp = DiagnosticFactory.createPathDiagnostic(
+          //   a.steering.path);
+          // this.stage.addChild(pp);
+          // console.log(`${out.i0}=>${out.i1}$${out.cost.toFixed(2)}`);
+        }
+      });
+    });
+
+    // a.g.on('mousemove', (evt: PIXI.InteractionEvent) => {
+    // });
+
+    // a.g.on('mouseover', (evt: PIXI.InteractionEvent) => {
+    //    a.g.tint = 0xFF0000;
+    //});
+
+    // a.g.on('mouseout', (evt: PIXI.InteractionEvent) => {
+    //   // a.g.tint = 0x00FF00;
+    // });
+
+    a.fsm.transitionTo(new Asleep());
+
+    this.poke();
   }
 
   createGround(
@@ -369,13 +386,13 @@ export class StageFace {
         height: h,
         subdivisionsX: this.face.csp.cellsX,
         subdivisionsY: this.face.csp.cellsY
-      }, 
+      },
       this.scene);
     plane.position.x = w * 0.5;
     plane.position.z = h * 0.5;
 
     const mat = new StandardMaterial(
-      `ground_mat`, 
+      `ground_mat`,
       this.scene);
     mat.alpha = 0.0;
     plane.material = mat;
@@ -389,45 +406,45 @@ export class StageFace {
 
     plane.actionManager.registerAction(
       new ExecuteCodeAction(
-          ActionManager.OnPointerOverTrigger,
-          (evt) => {
-            this.cursor.g.setEnabled(true);
-            this.bAddAgent = false;
-          }
+        ActionManager.OnPointerOverTrigger,
+        (evt) => {
+          this.cursor.g.setEnabled(true);
+          this.bAddAgent = false;
+        }
       )
     );
 
     plane.actionManager.registerAction(
       new ExecuteCodeAction(
-          ActionManager.OnPointerOutTrigger,
-          (evt) => {
-            this.cursor.g.setEnabled(false);
-            this.bAddAgent = false;
-          }
+        ActionManager.OnPointerOutTrigger,
+        (evt) => {
+          this.cursor.g.setEnabled(false);
+          this.bAddAgent = false;
+        }
       )
     );
 
     plane.actionManager.registerAction(
       new ExecuteCodeAction(
-          ActionManager.OnPickDownTrigger,
-          (evt) => {
-            if (evt.sourceEvent?.button === 0) {
-              this.bAddAgent = true;
-            }
-            if (evt.sourceEvent?.button === 2) {
-              this.face.wipeAgents();
-            }
+        ActionManager.OnPickDownTrigger,
+        (evt) => {
+          if (evt.sourceEvent?.button === 0) {
+            this.bAddAgent = true;
           }
+          if (evt.sourceEvent?.button === 2) {
+            this.face.wipeAgents();
+          }
+        }
       )
     );
 
     plane.actionManager.registerAction(
       new ExecuteCodeAction(
-          ActionManager.OnPickUpTrigger,
-          (evt) => {
-            this.bAddAgent = false;
-            this.boidColor = Color3.Random();
-          }
+        ActionManager.OnPickUpTrigger,
+        (evt) => {
+          this.bAddAgent = false;
+          this.boidColor = Color3.Random();
+        }
       )
     );
 
@@ -456,14 +473,12 @@ export class StageFace {
       this.nodeDiagnostic.updateGraphics();
     }
 
-    this.poke();
-
     if (this.timePassed > randInRange(0.01, 0.02)) {
       this.timePassed = 0;
       this.poke();
       if (this.bAddAgent) {
         this.addAgent(
-          this.boidRadius, 
+          this.boidRadius,
           this.cursor.position.clone());
       }
     }

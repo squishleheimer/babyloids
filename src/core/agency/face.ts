@@ -11,6 +11,7 @@ import Entity from './steering/entity';
 import { NavGraph, createSquareGrid, createTriangleGrid } from './math/graph/handy-graph-functions';
 import { PathFinder } from './math/graph/path-finder';
 import Path from './steering/path';
+import { randomIntFromInterval } from './math/random';
 
 export default class Face {
 
@@ -40,6 +41,8 @@ export default class Face {
   get graph(): NavGraph { return this._graph; }
   get pathFinder(): PathFinder { return this._pathFinder; }
 
+  public enableNonPenetrationConstraint: boolean = true;
+
   onAdd = (a: Agent) => {
     a.addEvent.trigger(a);
   }
@@ -52,14 +55,18 @@ export default class Face {
     position: Vector,
     rect: Vector,
     private maxFacets: number,
-    public enableNonPenetrationConstraint: boolean = true) {
+    {
+      cellSpaceSize = 7,
+      nonPenetrationEnabled = false
+    } = {}) {
+    this.enableNonPenetrationConstraint = nonPenetrationEnabled;
     this._position = position;
     this._rect = rect;
     this._csp = new CellSpacePartition(
       this._rect.x,
       this._rect.y,
-      7,
-      7,
+      cellSpaceSize,
+      cellSpaceSize,
      this.maxFacets
     );
     this._graph = new NavGraph();
@@ -93,6 +100,15 @@ export default class Face {
     p: Vector,
     r: number): Promise<void> {
     this.removeNode(p, r);
+  }
+
+  public getRandomOther(other: Agent): Entity {
+    const x = this.facets[randomIntFromInterval(0, this.facets.length - 1)] as Entity;
+    return x === other ? null : x;
+  }
+
+  public async getRandomOtherAsync(other: Agent): Promise<Entity> {
+    return this.getRandomOther(other);
   }
 
   public getRandomPath(
