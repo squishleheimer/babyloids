@@ -5,7 +5,7 @@ import Face from './agency/face';
 import Agent from './agency/agent';
 import Boid from './boid';
 import Vector from './agency/math/vector';
-import { BehaviourType } from './agency/steering/steering';
+import Steering, { BehaviourType } from './agency/steering/steering';
 import { Waking, DozingOff, Asleep, Reset, Awake } from './states';
 import { clamp, randInRange, randomIntFromInterval } from './agency/math/random';
 import Obstacle from './obstacle';
@@ -190,7 +190,7 @@ export class StageFace {
 
     this.face.onAdd = (a: Boid) => {
       this.addAsync(a).then(_ => {
-        console.log(`added:${a.id}`);
+        // console.log(`added:${a.id}`);
       });
     };
 
@@ -233,24 +233,6 @@ export class StageFace {
     a.steering.viewDistance = Math.max(this.face.csp.rect.x, this.face.csp.rect.y) * 0.5;
     a.steering.cellSpaceEnabled = true;
 
-    const others = [
-      // BehaviourType.ObstacleAvoidance,
-      // BehaviourType.WallAvoidance,
-      // BehaviourType.Alignment,
-      // BehaviourType.Cohesion,
-      // BehaviourType.Separation,
-      // BehaviourType.Wander,
-      // BehaviourType.FollowPath,
-      // BehaviourType.Evade,
-      // BehaviourType.Arrive,
-      // BehaviourType.Flee,
-      // BehaviourType.Pursuit,
-      // BehaviourType.OffsetPursuit,
-      // BehaviourType.Evade,
-      // BehaviourType.Hide
-      // BehaviourType.Interpose
-    ]
-    
     const followers = [
       BehaviourType.FollowPath,
     ];
@@ -316,18 +298,7 @@ export class StageFace {
       // if (fpd) {
       //   fpd.updateGraphics();
       // }
-      if (a.steering.path && a.steering.path.points.length > 0) {
-        a.steering.path.points.forEach(p => {
-          if (this.cursor.position.sub(p).getLengthSq() < this.cursor.radius ** 2) {
-            const i = this.face.pathFinder.getClosestNodeToPos(p);
-            const n = this.face.graph.getNode(i);
-            if (n) {
-              n.setOccupied(true);
-              this.face.graph.isDirty = true;
-            }
-          }
-        });
-      }
+      this.nodeOccupancyUpdate(_);
     });
 
     a.removeEvent.on((_: Agent) => {
@@ -373,6 +344,21 @@ export class StageFace {
     a.fsm.transitionTo(new Asleep());
 
     this.poke();
+  }
+
+  public nodeOccupancyUpdate(a: Agent) {
+    if (a.steering.path && a.steering.path.points.length > 0) {
+      a.steering.path.points.forEach(p => {
+        if (this.cursor.position.sub(p).getLengthSq() < this.cursor.radius ** 2) {
+          const i = a.face.pathFinder.getClosestNodeToPos(p);
+          const n = this.face.graph.getNode(i);
+          if (n) {
+            n.setOccupied(true);
+            this.face.graph.isDirty = true;
+          }
+        }
+      });
+    }
   }
 
   createGround(

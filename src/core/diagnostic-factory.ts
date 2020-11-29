@@ -90,8 +90,7 @@ export default class DiagnosticFactory {
     VertexData.ComputeNormals(positions, indices, normals);
 
     const mesh = new Mesh("boid", scene);
-
-    var vertexData = new VertexData();
+    const vertexData = new VertexData();
     vertexData.positions = positions;
     vertexData.indices = indices;
     vertexData.normals = normals;

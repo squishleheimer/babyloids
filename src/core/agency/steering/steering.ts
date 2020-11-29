@@ -1,3 +1,4 @@
+import Agent from '../agent';
 import Vector from '../math/vector';
 import Entity from './entity';
 import Path from './path';
@@ -30,6 +31,24 @@ export enum BehaviourType {
 
 export default class Steering {
 
+  public static AllBehaviours: BehaviourType[] = [
+    BehaviourType.ObstacleAvoidance,
+    BehaviourType.WallAvoidance,
+    BehaviourType.Alignment,
+    BehaviourType.Cohesion,
+    BehaviourType.Separation,
+    BehaviourType.Wander,
+    BehaviourType.FollowPath,
+    BehaviourType.Evade,
+    BehaviourType.Arrive,
+    BehaviourType.Flee,
+    BehaviourType.Pursuit,
+    BehaviourType.OffsetPursuit,
+    BehaviourType.Evade,
+    BehaviourType.Hide,
+    BehaviourType.Interpose
+  ];
+
   private behaviours: Array<SteeringBehaviour> = [];
 
   private flags: number;
@@ -45,7 +64,7 @@ export default class Steering {
   cellSpaceEnabled = true;
 
   constructor(
-    public owner: any,
+    public owner: Agent,
     public path: Path = new Path()) {
   }
 
@@ -158,6 +177,10 @@ export default class Steering {
     }
 
     return true;
+  }
+
+  async calculateAsync(): Promise<Vector> {
+    return this.calculate();
   }
 
   // ----------------------- Calculate --------------------------------------
