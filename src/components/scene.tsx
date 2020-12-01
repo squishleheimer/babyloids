@@ -25,7 +25,7 @@ const onSceneReady = scene => {
   const h = 500;
 
   // This creates and positions a free camera (non-mesh)
-  var camera = new FreeCamera("camera1", new Vector3(w/2.0, 250, -h/2.0), scene);
+  var camera = new FreeCamera("camera1", new Vector3(w / 2.0, 250, -h / 2.0), scene);
   // var camera = new ArcRotateCamera(
   //   "Camera", 
   //   -Math.PI/2, 
@@ -36,7 +36,7 @@ const onSceneReady = scene => {
 
   // This attaches the camera to the canvas
   camera.attachControl(
-    scene.getEngine().getRenderingCanvas(), 
+    scene.getEngine().getRenderingCanvas(),
     true);
 
   // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
@@ -48,12 +48,12 @@ const onSceneReady = scene => {
   stageFace = new StageFace(scene, w, h);
 
   // This targets the camera to scene origin
-  camera.setTarget(new Vector3(w/2.0, 0, h/2.0));
+  camera.setTarget(new Vector3(w / 2.0, 0, h / 2.0));
   //camera.setTarget(stageFace.plane);
 }
 
 const onRender = scene => {
-  const deltaTimeInSeconds = 
+  const deltaTimeInSeconds =
     scene.getEngine().getDeltaTime() * 0.001;
   stageFace.tick(deltaTimeInSeconds);
 }

@@ -298,9 +298,9 @@ export default class Face {
           }
 
           a.updatePosition(
-            a.position,
             a.position.add(
-              offset.mult(amountOfOverLap)));
+              offset.mult(amountOfOverLap)),
+            a.position);
         }
       }
     });

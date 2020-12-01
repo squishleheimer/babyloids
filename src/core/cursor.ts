@@ -26,13 +26,15 @@ export default class Cursor extends Entity {
     this.updateEvent.on(gUp);
   }
 
-  public asyncUpdate(newPos: Vector, oldPos: Vector = this.position): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.updatePosition(oldPos, newPos);
-    });
+  public async asyncUpdate(
+    newPos: Vector,
+    oldPos: Vector = this.position): Promise<void> {
+    return this.updatePosition(newPos, oldPos);
   }
   
-  public updatePosition(oldPos: Vector, newPos: Vector): void {
+  public updatePosition(
+    newPos: Vector,
+    oldPos: Vector = this.position): void {
     if (newPos) {
       if (oldPos) {
         this._velocity = this.smoother.update(
@@ -49,21 +51,6 @@ export default class Cursor extends Entity {
       this.g.position.x = this.position.x;
       this.g.position.z = this.position.y;
       this.g.scaling.set(this.radius, this.radius, this.radius);
-      // this.g
-      //   .clear()
-      //   .lineStyle(1, 0xFFFFFF, 1)
-      //   .beginFill(0xff00ff, 0.2)
-      //   .drawCircle(
-      //     this.position.x,
-      //     this.position.y,
-      //     this.radius)
-      //   .endFill()
-      //   .moveTo(
-      //     this.position.x,
-      //     this.position.y)
-      //   .lineTo(
-      //     this.position.x + this.velocity.x,
-      //     this.position.y + this.velocity.y);
     }
   }
 

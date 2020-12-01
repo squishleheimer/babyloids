@@ -19,7 +19,9 @@ export default abstract class Entity {
   resetEvent = new LifetimeEvent<Entity>();
 
   public abstract get enabled(): boolean;
-  public abstract updatePosition(oldPos: Vector, newPos: Vector): void;
+  public abstract updatePosition(
+    newPos: Vector, 
+    oldPos: Vector): void;
 
   constructor(
     // tslint:disable-next-line:variable-name

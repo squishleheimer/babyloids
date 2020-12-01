@@ -50,7 +50,7 @@ export default abstract class Agent extends Entity {
   }
 
   reset(p: Vector, d: Vector = this.direction) {
-    this.updatePosition(this.position, p);
+    this.updatePosition(p, this.position);
     this._tagged = false;
     this.sliceInSeconds = 0;
     this.direction = d.clone();
@@ -73,8 +73,8 @@ export default abstract class Agent extends Entity {
   }
 
   updatePosition(
-    oldPos: Vector,
-    newPos: Vector): void {
+    newPos: Vector,
+    oldPos: Vector): void {
     if (this.steering.cellSpaceEnabled) {
       this.face.csp.updateEntity(
         this, oldPos, newPos);
@@ -110,8 +110,7 @@ export default abstract class Agent extends Entity {
       const newPos = this.position.add(
         this.velocity.mult(deltaTimeInSeconds));
 
-      this.updatePosition(
-        oldPos, newPos);
+      this.updatePosition(newPos, oldPos);
 
       this._heading =
         this.smoother.enabled ?
@@ -149,8 +148,7 @@ export default abstract class Agent extends Entity {
     const newPos = this.position.add(
       this.velocity.mult(deltaTimeInSeconds));
 
-    this.updatePosition(
-      oldPos, newPos);
+    this.updatePosition(newPos, oldPos);
 
     this._heading =
       this.smoother.enabled ?
