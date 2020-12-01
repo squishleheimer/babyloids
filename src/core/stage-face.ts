@@ -1,5 +1,6 @@
 import { Scene, Mesh, TransformNode, Color3, InstancedMesh, AbstractMesh, LinesMesh, Plane, Vector3, Epsilon, ActionManager, ExecuteCodeAction, PointerEventTypes, BoundingBox, StandardMaterial, VertexBuffer, BoxBuilder, KeyboardInfo, PointerInfo, Color4 } from '@babylonjs/core';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
+import { AdvancedDynamicTexture, Control, TextBlock } from '@babylonjs/gui';
 
 import Face from './agency/face';
 import Agent from './agency/agent';
@@ -22,6 +23,9 @@ export class StageFace {
   public face: Face;
 
   diagnostics = [];
+
+  diagnosticGUI: AdvancedDynamicTexture;
+  faceInfo: TextBlock;
 
   plane: Mesh;
   cursor: Cursor = new Cursor(5.0);
@@ -195,6 +199,19 @@ export class StageFace {
     };
 
     this.addDiagnostics();
+
+    // GUI
+    this.diagnosticGUI =
+      AdvancedDynamicTexture.CreateFullscreenUI("UI", true, this.scene);
+
+    this.faceInfo = new TextBlock("FaceInfo");
+    this.faceInfo.color = "white";
+    this.faceInfo.fontSize = 12;
+    this.faceInfo.textHorizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
+    this.faceInfo.textVerticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
+    this.faceInfo.paddingTop = 20;
+    this.faceInfo.paddingRight = 20;
+    this.diagnosticGUI.addControl(this.faceInfo);
   }
 
   private async addAsync(a: Boid): Promise<void> {
@@ -303,6 +320,7 @@ export class StageFace {
 
     a.removeEvent.on((_: Agent) => {
       this.scene.removeMesh(a.g as Mesh);
+      this.faceInfo.text = `Agents: ${this.face.facets.length}`;
       // this.stage.removeChild(ad);
       // if (pp) {
       //   this.stage.removeChild(pp);
@@ -344,6 +362,8 @@ export class StageFace {
     a.fsm.transitionTo(new Asleep());
 
     this.poke();
+
+    this.faceInfo.text = `Agents: ${this.face.facets.length}`;
   }
 
   public nodeOccupancyUpdate(a: Agent) {
