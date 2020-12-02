@@ -83,12 +83,11 @@ export default abstract class Agent extends Entity {
     this.updateEvent.trigger(this);
   }
 
-  private steerAsync(deltaTimeInSeconds: number): void {
+  private steer(deltaTimeInSeconds: number): void {
 
+    // calculate the combined force from each
+    // steering behavior in the npc's list
     this.steering.calculateAsync().then((steeringForce) => {
-      // calculate the combined force from each
-      // steering behavior in the npc's list
-      //const steeringForce: Vector = this.steering.calculate();
 
       // Acceleration = Force/Mass
       const acceleration: Vector = steeringForce.div(this.mass);
@@ -116,45 +115,7 @@ export default abstract class Agent extends Entity {
         this.smoother.enabled ?
           this.smoother.update(this.direction) :
           this.direction;
-
-      // console.log(`speed: ${this.speed}`);
     }
     );
-  }
-
-  private steer(deltaTimeInSeconds: number): void {
-
-    // calculate the combined force from each
-    // steering behavior in the npc's list
-    const steeringForce: Vector = this.steering.calculate();
-
-    // Acceleration = Force/Mass
-    const acceleration: Vector = steeringForce.div(this.mass);
-
-    // update velocity
-    this.velocity.addTo(
-      acceleration.mult(deltaTimeInSeconds));
-
-    // make sure agent does not exceed maximum velocity
-    this.velocity.truncate(this.maxSpeed);
-
-    // update the heading if the agent has a non zero velocity
-    if (this.velocity.getLengthSq() > Number.MIN_VALUE) {
-      this.direction = this.velocity.unit();
-      this.side.set(this.direction.perp());
-    }
-
-    const oldPos = this.position;
-    const newPos = this.position.add(
-      this.velocity.mult(deltaTimeInSeconds));
-
-    this.updatePosition(newPos, oldPos);
-
-    this._heading =
-      this.smoother.enabled ?
-      this.smoother.update(this.direction) :
-      this.direction;
-
-    // console.log(`speed: ${this.speed}`);
   }
 }

@@ -219,7 +219,7 @@ export default class Steering {
         this.steeringForce = this.calculatePrioritized();
         break;
       case SummingMethod.Dithered:
-        this.steeringForce = this.calculateDithered();
+        this.steeringForce = this.calculateDitheredAsync();
         break;
       default:
         this.steeringForce.zero();
@@ -262,7 +262,8 @@ export default class Steering {
 
     for (const b of this.behaviours) {
       if (this.isOn(b.behaviourType)) {
-        this.steeringForce.addTo(b.force().mult(b.weight * this.forceTweaker));
+        this.steeringForce.addTo(
+          b.force().mult(b.weight * this.forceTweaker));
       }
     }
 
@@ -289,7 +290,48 @@ export default class Steering {
 
     for (const b of this.behaviours) {
       if (this.isOn(b.behaviourType) && Math.random() < b.probability) {
-        this.steeringForce.addTo(b.force().mult(b.weight * this.forceTweaker));
+        this.steeringForce.addTo(
+          b.force().mult(b.weight * this.forceTweaker));
+        this.steeringForce.multiply(b.weight / b.probability);
+
+        if (this.steeringForce.length > Number.MIN_VALUE) {
+          this.steeringForce.truncate(this.owner.maxForce);
+          return this.steeringForce;
+        }
+      }
+    }
+
+    return this.steeringForce;
+  }
+
+  private calculateDitheredAsync(): Vector {
+
+    const force: Vector = this.steeringForce.clone();
+
+    Promise.all(this.behaviours.map(b => {
+      if (this.isOn(b.behaviourType) && Math.random() < b.probability) {
+        const f: Vector = b.force();
+        return { behaviour: b, force: f };
+      }
+      return { behaviour: b, force: Vector.ZERO };
+    })).then(values => {
+      values.forEach(v => {
+        force.addTo(v.force.mult(v.behaviour.weight * this.forceTweaker));
+        force.multiply(v.behaviour.weight / v.behaviour.probability);
+      });
+    }).then(x => console.log(`${force.getLengthSq()}`));  
+
+    if (force.length > Number.MIN_VALUE) {
+      force.truncate(this.owner.maxForce);
+      return force;
+    }
+
+    return force;
+
+    for (const b of this.behaviours) {
+      if (this.isOn(b.behaviourType) && Math.random() < b.probability) {
+        this.steeringForce.addTo(
+          b.force().mult(b.weight * this.forceTweaker));
         this.steeringForce.multiply(b.weight / b.probability);
 
         if (this.steeringForce.length > Number.MIN_VALUE) {
@@ -344,6 +386,10 @@ export abstract class SteeringBehaviour {
   abstract get behaviourType(): BehaviourType;
 
   get name(): string { return BehaviourType[this.behaviourType].toUpperCase(); }
+
+  async forceAsync(): Promise<Vector> {
+    return this.force();
+  }
 
   force(): Vector { return Vector.ZERO; }
 
