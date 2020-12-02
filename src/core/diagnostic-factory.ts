@@ -78,7 +78,7 @@ export default class DiagnosticFactory {
     );
 
     const positions = [];
-    points.forEach((p, i) => points[i].toArray(positions, 0 + i * 3));
+    points.forEach((p, i) => p.toArray(positions, 0 + i * 3));
     var indices = [
       0, 2, 1,
       0, 1, 3,
