@@ -1,8 +1,8 @@
-import { SteeringBehaviour, BehaviourType } from './steering';
-import Agent from '../agent';
-import Vector from '../math/vector';
-import { pointToLocalSpace, vectorToWorldSpace } from '../math/geometry';
-import Entity from './entity';
+import { SteeringBehaviour, BehaviourType } from './../steering';
+import Agent from '../../agent';
+import Vector from '../../math/vector';
+import { pointToLocalSpace, vectorToWorldSpace } from '../../math/geometry';
+import Entity from './../entity';
 
 export default class ObstacleAvoidance extends SteeringBehaviour {
   owner: Agent;

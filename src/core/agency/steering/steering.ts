@@ -200,13 +200,19 @@ export default class Steering {
           this.viewDistance);
       }
     }
-  } 
+  }
 
   async calculateAsync(): Promise<Vector> {
     
     this.preCalculate();
 
-    return this.calculateDitheredAsync();
+    return this.calculateDitheredAsync()
+    .then(force => {
+      this.steeringForce.set(force);
+    })
+    .then(_ => {
+      return this.steeringForce;
+    });
   }
 
   // ----------------------- Calculate --------------------------------------
@@ -332,7 +338,6 @@ export default class Steering {
       if (force.length > Number.MIN_VALUE) {
         force.truncate(this.owner.maxForce);
       }
-      this.steeringForce.set(force);
       return force;
     });
   }

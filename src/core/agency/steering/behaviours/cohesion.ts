@@ -1,6 +1,6 @@
-import { SteeringBehaviour, BehaviourType } from './steering';
-import Vector from '../math/vector';
-import Agent from '../agent';
+import { SteeringBehaviour, BehaviourType } from './../steering';
+import Vector from '../../math/vector';
+import Agent from '../../agent';
 import Seek from './seek';
 
 export default class Cohesion extends SteeringBehaviour {

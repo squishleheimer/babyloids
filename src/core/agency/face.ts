@@ -1,6 +1,6 @@
 import Agent from './agent';
 import Vector from './math/vector';
-import Alignment from './steering/alignment';
+import Alignment from './steering/behaviours/alignment';
 import Cohesion from './steering/cohesion';
 import Separation from './steering/separation';
 import Wander from './steering/wander';

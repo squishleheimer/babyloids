@@ -1,8 +1,8 @@
-import { SteeringBehaviour, BehaviourType } from './steering';
-import Agent from '../agent';
-import Vector from '../math/vector';
-import { vecRotateAroundOrigin, lineIntersection2D } from '../math/geometry';
-import Wall from './wall';
+import { SteeringBehaviour, BehaviourType } from './../steering';
+import Agent from '../../agent';
+import Vector from '../../math/vector';
+import { vecRotateAroundOrigin, lineIntersection2D } from '../../math/geometry';
+import Wall from './../wall';
 
 export default class WallAvoidance extends SteeringBehaviour {
   owner: Agent;
