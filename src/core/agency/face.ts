@@ -1,9 +1,9 @@
 import Agent from './agent';
 import Vector from './math/vector';
 import Alignment from './steering/behaviours/alignment';
-import Cohesion from './steering/cohesion';
-import Separation from './steering/separation';
-import Wander from './steering/wander';
+import Cohesion from './steering/behaviours/cohesion';
+import Separation from './steering/behaviours/separation';
+import Wander from './steering/behaviours/wander';
 import Wall from './steering/wall';
 import { pointToLocalSpace } from './math/geometry';
 import CellSpacePartition from './math/cell-space-partition';

@@ -12,7 +12,7 @@ import { clamp, randInRange, randomIntFromInterval } from './agency/math/random'
 import Obstacle from './obstacle';
 import Cursor from './cursor';
 import { createInwardRectWalls } from './agency/steering/wall';
-import SteeringFactory from './agency/steering/factory';
+import SteeringFactory from './agency/steering/behaviours/factory';
 import Entity from './agency/steering/entity';
 import DiagnosticFactory from './diagnostic-factory';
 
@@ -150,7 +150,7 @@ export class StageFace {
       new Vector(w, h),
       this.MAX_AGENTS,
       {
-        cellSpaceSize: 5,
+        cellSpaceSize: 2,
         nonPenetrationEnabled: true
       });
 

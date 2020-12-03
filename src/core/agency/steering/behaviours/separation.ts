@@ -6,7 +6,7 @@ export default class Separation extends SteeringBehaviour {
   owner: Agent;
 
   constructor(owner: Agent) {
-    super(4, 1, 0.6);
+    super(4, 2.0, 0.3);
 
     this.owner = owner;
   }

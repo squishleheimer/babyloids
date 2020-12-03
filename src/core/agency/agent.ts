@@ -67,7 +67,11 @@ export default abstract class Agent extends Entity {
     this.fsm.update(deltaTimeInSeconds);
     if (this.steering.enabled) {
       this.sliceInSeconds = deltaTimeInSeconds;
-      this.steer(deltaTimeInSeconds);
+      // calculate the combined force from each
+      // steering behavior in the npc's list
+      this.steering.calculateAsync().then(steeringForce => {
+        this.steer(steeringForce, deltaTimeInSeconds);
+      });
     }
     this.updateGraphics();
   }
@@ -83,39 +87,35 @@ export default abstract class Agent extends Entity {
     this.updateEvent.trigger(this);
   }
 
-  private steer(deltaTimeInSeconds: number): void {
+  private steer(
+    steeringForce: Vector, 
+    deltaTimeInSeconds: number): void {
 
-    // calculate the combined force from each
-    // steering behavior in the npc's list
-    this.steering.calculateAsync().then((steeringForce) => {
+    // Acceleration = Force/Mass
+    const acceleration: Vector = steeringForce.div(this.mass);
 
-      // Acceleration = Force/Mass
-      const acceleration: Vector = steeringForce.div(this.mass);
+    // update velocity
+    this.velocity.addTo(
+      acceleration.mult(deltaTimeInSeconds));
 
-      // update velocity
-      this.velocity.addTo(
-        acceleration.mult(deltaTimeInSeconds));
+    // make sure agent does not exceed maximum velocity
+    this.velocity.truncate(this.maxSpeed);
 
-      // make sure agent does not exceed maximum velocity
-      this.velocity.truncate(this.maxSpeed);
-
-      // update the heading if the agent has a non zero velocity
-      if (this.velocity.getLengthSq() > Number.MIN_VALUE) {
-        this.direction = this.velocity.unit();
-        this.side.set(this.direction.perp());
-      }
-
-      const oldPos = this.position;
-      const newPos = this.position.add(
-        this.velocity.mult(deltaTimeInSeconds));
-
-      this.updatePosition(newPos, oldPos);
-
-      this._heading =
-        this.smoother.enabled ?
-          this.smoother.update(this.direction) :
-          this.direction;
+    // update the heading if the agent has a non zero velocity
+    if (this.velocity.getLengthSq() > Number.MIN_VALUE) {
+      this.direction = this.velocity.unit();
+      this.side.set(this.direction.perp());
     }
-    );
+
+    const oldPos = this.position;
+    const newPos = this.position.add(
+      this.velocity.mult(deltaTimeInSeconds));
+
+    this.updatePosition(newPos, oldPos);
+
+    this._heading =
+      this.smoother.enabled ?
+        this.smoother.update(this.direction) :
+        this.direction;
   }
 }
