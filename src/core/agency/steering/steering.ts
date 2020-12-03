@@ -179,17 +179,7 @@ export default class Steering {
     return true;
   }
 
-  async calculateAsync(): Promise<Vector> {
-    return this.calculate();
-  }
-
-  // ----------------------- Calculate --------------------------------------
-  //
-  //  calculates the accumulated steering force according to the method set
-  //  in _summingMethod
-  // ------------------------------------------------------------------------
-  calculate(): Vector {
-
+  private preCalculate(): void {
     // reset the steering force
     this.steeringForce.zero();
 
@@ -210,6 +200,23 @@ export default class Steering {
           this.viewDistance);
       }
     }
+  } 
+
+  async calculateAsync(): Promise<Vector> {
+    
+    this.preCalculate();
+
+    return this.calculateDitheredAsync();
+  }
+
+  // ----------------------- Calculate --------------------------------------
+  //
+  //  calculates the accumulated steering force according to the method set
+  //  in _summingMethod
+  // ------------------------------------------------------------------------
+  calculate(): Vector {
+
+    this.preCalculate();
 
     switch (this.summingMethod) {
       case SummingMethod.WeightedAverage:
@@ -219,7 +226,7 @@ export default class Steering {
         this.steeringForce = this.calculatePrioritized();
         break;
       case SummingMethod.Dithered:
-        this.calculateDitheredAsync();
+        this.steeringForce = this.calculateDithered();
         break;
       default:
         this.steeringForce.zero();
@@ -308,25 +315,26 @@ export default class Steering {
 
     const force: Vector = this.steeringForce.clone();
 
-    await Promise.all(this.behaviours.map( async b => {
+    return Promise.all(this.behaviours.map( async b => {
       if (this.isOn(b.behaviourType) && Math.random() < b.probability) {
         const f: Vector = await b.forceAsync();
         return { behaviour: b, force: f };
       }
       return { behaviour: b, force: Vector.ZERO };
-    })).then(values => {
+    }))
+    .then(values => {
       values.forEach(v => {
         force.addTo(v.force.mult(v.behaviour.weight * this.forceTweaker));
         force.multiply(v.behaviour.weight / v.behaviour.probability);
       });
-    });
-
-    if (force.length > Number.MIN_VALUE) {
-      force.truncate(this.owner.maxForce);
+    })
+    .then(_ => {
+      if (force.length > Number.MIN_VALUE) {
+        force.truncate(this.owner.maxForce);
+      }
+      this.steeringForce.set(force);
       return force;
-    }
-
-    return force;
+    });
   }
 }
 
