@@ -1,6 +1,6 @@
-import { SteeringBehaviour, BehaviourType } from './steering';
-import Vector from '../math/vector';
-import Agent from '../agent';
+import { SteeringBehaviour, BehaviourType } from './../steering';
+import Vector from '../../math/vector';
+import Agent from '../../agent';
 
 export default class Flee extends SteeringBehaviour {
 

@@ -1,8 +1,8 @@
-import Vector from '../math/vector';
-import Agent from '../agent';
-import { SteeringBehaviour, BehaviourType } from './steering';
-import { randomPointOnCircumference, pointToWorldSpace } from '../math/geometry';
-import { rand } from '../math/random';
+import Vector from '../../math/vector';
+import Agent from '../../agent';
+import { SteeringBehaviour, BehaviourType } from './../steering';
+import { randomPointOnCircumference, pointToWorldSpace } from '../../math/geometry';
+import { rand } from '../../math/random';
 
 export default class Wander extends SteeringBehaviour {
   owner: Agent;

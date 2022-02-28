@@ -1,4 +1,4 @@
-import { BehaviourType } from './steering';
+import { BehaviourType } from '../steering';
 import WallAvoidance from './wall-avoidance';
 import ObstacleAvoidance from './obstacle-avoidance';
 import Alignment from './alignment';

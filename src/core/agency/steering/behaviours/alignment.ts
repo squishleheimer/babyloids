@@ -1,17 +1,17 @@
-import { SteeringBehaviour, BehaviourType } from './steering';
-import Vector from '../math/vector';
-import Agent from '../agent';
+import { SteeringBehaviour, BehaviourType } from '../steering';
+import Vector from '../../math/vector';
+import Agent from '../../agent';
 
-export default class Separation extends SteeringBehaviour {
+export default class Alignment extends SteeringBehaviour {
   owner: Agent;
 
   constructor(owner: Agent) {
-    super(4, 1, 0.2);
+    super(4, 1.0, 0.2);
 
     this.owner = owner;
   }
 
-  get behaviourType(): BehaviourType { return BehaviourType.Separation; }
+  get behaviourType(): BehaviourType { return BehaviourType.Alignment; }
 
   force(): Vector {
     if (this.owner.steering.cellSpaceEnabled) {
@@ -26,26 +26,31 @@ export default class Separation extends SteeringBehaviour {
 
     if (this.owner && neighbours.length > 0) {
 
-      let steeringForce: Vector = Vector.ZERO;
+      // used to record the average heading of the neighbors
+      let averageHeading: Vector = Vector.ZERO;
 
+      let neighbourCount = 0;
+
+      // iterate through all the tagged vehicles and sum their heading vectors
       for (const n of neighbours) {
         // make sure this agent isn't included in the calculations and that
         // the agent being examined is close enough.
         // TODO: *** also make sure it doesn't include the evade target ***
         if (n !== this.owner && n.enabled &&
           (this.owner.steering.cellSpaceEnabled || n.isTagged())) {
-          const toAgent: Vector = this.owner.position.sub(n.position);
-
-          // scale the force inversely proportional to the agents distance
-          // from its neighbor.
-          const length: number = toAgent.length;
-          if (length > 0) {
-            steeringForce = steeringForce.add(toAgent.unit().div(length));
-          }
+          averageHeading.addTo(n.heading);
+          ++neighbourCount;
         }
       }
 
-      return steeringForce;
+      // if the neighborhood contained one or more vehicles, average their
+      // heading vectors.
+      if (neighbourCount > 0) {
+        averageHeading = averageHeading.div(neighbourCount);
+        averageHeading = averageHeading.sub(this.owner.heading);
+      }
+
+      return averageHeading;
     }
 
     return Vector.ZERO;

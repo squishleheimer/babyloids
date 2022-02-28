@@ -1,9 +1,9 @@
-import { SteeringBehaviour, BehaviourType } from './steering';
+import { SteeringBehaviour, BehaviourType } from './../steering';
 import Arrive, { Deceleration } from './arrive';
 import Seek from './seek';
-import Vector from '../math/vector';
-import Agent from '../agent';
-import Entity from './entity';
+import Vector from '../../math/vector';
+import Agent from '../../agent';
+import Entity from './../entity';
 
 export enum PursuitMethod {
   Arrive,

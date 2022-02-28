@@ -1,9 +1,8 @@
-import { SteeringBehaviour, BehaviourType } from './steering';
+import { SteeringBehaviour, BehaviourType } from './../steering';
 import Arrive, { Deceleration } from './arrive';
-import Vector from '../math/vector';
-import Agent from '../agent';
-import Entity from './entity';
-import { pointToWorldSpace } from '../math/geometry';
+import Vector from '../../math/vector';
+import Agent from '../../agent';
+import Entity from './../entity';
 
 export default class Interpose extends SteeringBehaviour {
 
